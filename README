@@ -1,1 +1,9 @@
-Concerto: a tool to extract, analyse and browse certificates and chains.
+Concerto: a set of tools to extract, analyse and browse certificates and chains:
+ - piatto, a Parsifal-based tool to extract certificates from answer dumps
+
+ - chitarra, an OCaml tool to enrich data in the database
+
+ - piccolo, a web server in Python/Flask to present the result
+ - fagotto, a program to produce report
+
+ - maestro, to wrap it up
