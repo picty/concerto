@@ -1,0 +1,60 @@
+<html>
+  <head>
+    <title>{{ ips | escape }} - {{ chain.chain_hash | escape }} - {{ chain.built_chain_number }}</title>
+  </head>
+  <body>
+    <h1>{{ ips | escape }} : {{ chain.grade | escape }}</h1>
+
+    <h3>{{ chain.chain_hash | escape }} - {{ chain.built_chain_number }}</h3>
+    <h3>{{ chain.subject | escape }}</h3>
+
+    <table border="1">
+      <tr>
+        <th>Complete</th>
+        <td>{{ chain.complete | escape }}</td>
+      </tr>
+      <tr>
+        <th>Trusted</th>
+        <td>{{ chain.trusted | escape }}</td>
+      </tr>
+      <tr>
+        <th>Ordered</th>
+        <td>{{ chain.ordered | escape }}</td>
+      </tr>
+    </table>
+
+    <h2>Certificates in chain</h1>
+
+    <table border="1">
+      {%- for cert in certs %}
+      <tr>
+	<td>{{ cert.position_in_msg }}</td>
+	<td><a href="{{ '/certs/' + cert.cert_hash }}">{{ cert.subject }}</a></td>
+      </tr>
+      {%- endfor %}
+    </table>
+
+    {% if (unused_certs | count) > 0 %}
+    <h2>Unused certificates</h2>
+
+    <table border="1">
+      {%- for cert in unused_certs %}
+      <tr>
+	<td>{{ cert.position_in_msg }}</td>
+	<td><a href="{{ '/certs/' + cert.cert_hash }}">{{ cert.subject }}</a></td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
+    {% if (alt_chains | count) > 0 %}
+    <h2>Alternate chains</h2>
+    <ul>
+      {%- for alt_chain in alt_chains %}
+      <li><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( alt_chain.built_chain_number | string ) }}">{{ alt_chain.grade }}</li>
+      {%- endfor %}      
+    </ul>
+    {% endif %}
+
+  </body>
+</html>

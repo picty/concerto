@@ -1,0 +1,137 @@
+<html>
+  <head>
+    <title>{{ cert.hash | escape }}</title>
+  </head>
+  <body>
+    <h1>{{ cert.hash | escape }}</h1>
+
+    <table border="1">
+      <tr>
+        <th>Version</th>
+        <td>{{ cert.version | escape }}</td>
+      </tr>
+      <tr>
+        <th>Serial number</th>
+        <td>{{ cert.serial | escape }}</td>
+      </tr>
+      <tr>
+        <th>Issuer</th>
+        <td><a href="{{ '/certs/by-subject-hash/' + cert.issuer_hash }}">{{ cert.issuer | escape }}</a></td>
+      </tr>
+      <tr>
+        <th>Not valid before</th>
+	<td>{{ cert.notbefore | escape }}</td>
+      </tr>
+      <tr>
+        <th>Not valid after</th>
+	<td>{{ cert.notafter | escape }}</td>
+      </tr>
+      <tr>
+        <th>Subject</th>
+        <td><a href="{{ '/certs/by-subject-hash/' + cert.subject_hash }}">{{ cert.subject | escape }}</a></td>
+      </tr>
+      <tr>
+        <th>Key type</th>
+	<td>{{ cert.key_type | escape }} {{ cert.key_len | escape }}</td>
+      </tr>
+    {% if cert.key_type == "RSA" %}
+      <tr>
+        <th>RSA modulus</th>
+	<td>{{ cert.rsa_modulus | escape }}</td>
+      </tr>
+      <tr>
+        <th>RSA exponent</th>
+	<td>{{ cert.rsa_exponent | escape }}</td>
+      </tr>
+    {% endif %}
+      <tr>
+        <th>CA</th>
+        <td>{{ cert.isCA | escape }}</td>
+      </tr>
+    </table>
+
+    <h2>HTTP Names</h2>
+    <table border="1">
+      {%- for name in names %}
+      <tr>
+	<td>{{ name.type }}</td>
+	<td>{{ name.name }}</td>
+      </tr>
+      {%- endfor %}
+    </table>
+
+    {% if (issuers | count) > 0 %}
+    <h2>Issuers</h2>
+    <table border="1">
+      {%- for i in issuers %}
+      <tr>
+	<td><a href="{{ '/certs/by-hash/' + i.hash }}">{{ i.name | escape }}</td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
+    {% if (issued | count) > 0 %}
+    <h2>{{ issued | count }} certificates issued</h2>
+    <table border="1">
+      {%- for i in issued %}
+      <tr>
+	<td><a href="{{ '/certs/by-hash/' + i.hash }}">{{ i.name | escape }}</td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
+    {% if (issued_names | count) > 0 %}
+    <h2>{{ issued_names | count }} names issued</h2>
+    <table border="1">
+      {%- for name in issued_names %}
+      <tr>
+	<td>{{ name.type }}</td>
+	<td><a href="{{ '/certs/by-exact-https-name/' + name.type + '/' + name.name }}">{{ name.name }}</td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
+
+
+    {% if (transitive_issuers | count) > 0 %}
+    <h2>Ancestors</h2>
+    <table border="1">
+      {%- for i in transitive_issuers %}
+      <tr>
+	<td>{{ i.distance | escape }}</td>
+	<td><a href="{{ '/certs/by-hash/' + i.hash }}">{{ i.name | escape }}</a></td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
+    {% if (transitive_issued | count) > 0 %}
+    <h2>{{ transitive_issued | count }} certificates issued in depth</h2>
+    <table border="1">
+      {%- for i in transitive_issued %}
+      <tr>
+	<td>{{ i.distance | escape }}</td>
+	<td><a href="{{ '/certs/by-hash/' + i.hash }}">{{ i.name | escape }}</a></td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
+    {% if (transitive_issued_names | count) > 0 %}
+    <h2>{{ transitive_issued_names | count }} names issued in depth</h2>
+    <table border="1">
+      {%- for name in transitive_issued_names %}
+      <tr>
+	<td>{{ name.type }}</td>
+	<td><a href="{{ '/certs/by-exact-https-name/' + name.type + '/' + name.name }}">{{ name.name }}</td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
+
+  </body>
+</html>

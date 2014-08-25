@@ -1,0 +1,21 @@
+<html>
+  <head>
+    <title>{{ title | escape }}</title>
+  </head>
+  <body>
+    <h1>{{ title | escape }}</h1>
+
+    {{ chains | count }} candidates found:
+
+    <table border="1">
+      {%- for chain in chains %}
+      <tr>
+	<td><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( chain.built_chain_number | string ) }}">{{ chain.ip }}</td>
+	<td>{{ chain.grade }}</td>
+	<td>{% if chain.trusted %}T{% elif chain.complete %}C{% endif %}{% if chain.ordered %}O{% endif %}</td>
+	<td>{{ chain.subject }}</td>
+      </tr>
+      {%- endfor %}
+    </table>
+  </body>
+</html>
