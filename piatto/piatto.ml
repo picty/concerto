@@ -174,14 +174,15 @@ let rec csv_handle_one_file ops store input =
   let finalize_ok answer =
     let ctx = empty_context (default_prefs DummyRNG) in
     let ip_str = string_of_v2_ip answer.ip_addr in
+    let campaign = string_of_int answer.campaign in
     enrich_record_content := true;
     let answer_input = input_of_string ip_str answer.content in
     ignore (parse_all_records ServerToClient (Some ctx) answer_input);
 
     let certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) ctx.future.f_certificates in
     let chain_hash = CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc certs)) in
-    if ops.check_key_freshness "answers" (ip_str ^ chain_hash) then begin
-      ops.write_line "answers" (ip_str ^ chain_hash) [ip_str; hexdump chain_hash];
+    if ops.check_key_freshness "answers" (ip_str ^ campaign ^ answer.name) then begin
+      ops.write_line "answers" (ip_str ^ campaign ^ answer.name) [campaign; ip_str; answer.name; hexdump chain_hash];
 
       if ops.check_key_freshness "chains" chain_hash then begin
 	List.iteri (fun i -> fun sc -> ops.write_line "chains" chain_hash

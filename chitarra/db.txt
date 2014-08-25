@@ -1,7 +1,9 @@
 create table answers(
+       campaign int,
        ip text,
+       name text,
        chain_hash text,
-       primary key (ip, chain_hash)
+       primary key (campaign, ip, name)
 );
 
 create table chains(
