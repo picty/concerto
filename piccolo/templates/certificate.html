@@ -50,6 +50,27 @@
       </tr>
     </table>
 
+    {% if (answers | count) > 0 %}
+    <h2>Certificate seen {{ answers | count }} times</h2>
+    <table border="1">
+      <tr>
+	<th>Campaign</th>
+	<th colspan="2">Location</th>
+	<th>Position in chain</th>
+        <th>Link to the chain</th>
+      </tr>
+      {%- for answer in answers %}
+      <tr>
+	<td>{{ answer.campaign }}</td>
+	<td>{{ answer.name }}</td>
+	<td><a href="{{ '/chains/by-ip/' + answer.ip + '/0' }}">{{ answer.ip }}</td>
+	<td>{{ answer.position }}</td>
+        <td><a href="{{ '/chains/by-hash/' + answer.chain_hash + '/0' }}">{{ answer.chain_hash }}</a></td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
     <h2>HTTP Names</h2>
     <table border="1">
       {%- for name in names %}

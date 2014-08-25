@@ -70,6 +70,10 @@ def get_certs(sup_joins, conditions, args, title, group_by_list = []):
                 cert['key_len'] = len (n) * 4
             else:
                 cert['key_len'] = 0
+            answers = query_db (["campaign", "ip", "name", "chain_hash", "position"],
+                                ["answers"],
+                                ["chains on chain_hash = hash"],
+                                ["cert_hash = ?"], [cert["hash"]])
             names = query_db (["type", "name"], ["names"], [], ["cert_hash = ?"], [cert["hash"]])
             issuers = query_db (["certs.hash as hash", "dns.name as name"], ["dns"],
                                 ["certs on certs.subject_hash = dns.hash",
@@ -103,7 +107,7 @@ def get_certs(sup_joins, conditions, args, title, group_by_list = []):
                                       "transitive_links on transitive_links.subject_hash = certs.hash"],
                                      ["transitive_links.issuer_hash = ?"], [cert["hash"]])
 
-            return render_template ("certificate.html", cert=cert, names=names,
+            return render_template ("certificate.html", cert=cert, answers=answers, names=names,
                                     issuers = issuers, issued = issued, issued_names = issued_names,
                                     transitive_issuers = transitive_issuers, transitive_issued = transitive_issued,
                                     transitive_issued_names = transitive_issued_names)
