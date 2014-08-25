@@ -1,0 +1,26 @@
+Campaigns
+ - Add tools to probe a list
+ - Add tools to extract IPs and names from a daatabase, possibly subject to some conditions (campaign id)
+
+AnswerDump -> CSV
+ - Do not analyse links and chains too early
+
+scans.io -> CSV
+ - Add support for files from scans.io (_hosts + _certs)
+
+DB injection
+ - Allow for DB reuse (with different campaign ids)
+ - New tool to check DB internal consistency (should be replaced by real constraints?)
+ - Allow for different back-ends (sqlite, pgsql)
+
+Analysis -> DB injection
+ - Allow for progressive enrichment (links, revocation, chains)
+
+Website
+ - Rewrite templates and code to take into account campaign_id and names properly
+ - Add support for redirect for one cert/one chain
+   (certs/by-hash/0c -> certs/by-hash/0c543534...) and try to make it work with the statification
+ - chains.html should handle campaign_id + answer.name + ips
+ - chain.html should handle campaign_id + answer.name + ips
+ - Add support to filter by campaign
+ - Add support to only show certain parts of the HTML + limit the depth of the queries
