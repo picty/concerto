@@ -53,6 +53,13 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+def campaign_str(cid):
+    cid_s = "%s" % cid
+    if len(cid_s) == 10:
+        return "%s-%s-%s/%s" % (cid_s[0:4], cid_s[4:6], cid_s[6:8], cid_s[8:10])
+    else:
+        return cid_s
+
 
 def get_certs(sup_joins, conditions, args, title, group_by_list = []):
     fields = ["certs.hash as hash", "version", "serial",
@@ -79,6 +86,8 @@ def get_certs(sup_joins, conditions, args, title, group_by_list = []):
                                 ["answers"],
                                 ["chains on chain_hash = hash"],
                                 ["cert_hash = ?"], [cert["hash"]])
+            for answer in answers:
+                answer["campaign"] = campaign_str(answer["campaign"])
             names = query_db (["type", "name"], ["names"], [], ["cert_hash = ?"], [cert["hash"]])
             issuers = query_db (["certs.hash as hash", "dns.name as name"], ["dns"],
                                 ["certs on certs.subject_hash = dns.hash",
@@ -175,6 +184,8 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
             ips = query_db (["campaign", "name", "ip", "answers.chain_hash as chain_hash"], ["answers"],
                             ["built_chains on built_chains.chain_hash = answers.chain_hash"],
                             conditions, [rv[0]['chain_hash'], rv[0]['built_chain_number']])
+            for ip in ips:
+                ip["campaign"] = campaign_str(ip["campaign"])
             fields = ["certs.hash as cert_hash",
                       "dns.name as subject",
                       "position_in_msg"]
@@ -219,6 +230,8 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
             conditions = ["built_links.position_in_msg = 0"] + sup_conditions
             rv = query_db (fields, tables, joins, conditions, args,
                            order_by = ["grade DESC"], group_by = group_by)
+            for result in rv:
+                result["campaign"] = campaign_str(result["campaign"])
             
             return render_template ("chains.html", chains = rv, title = title)
     else:
