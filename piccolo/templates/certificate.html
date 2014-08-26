@@ -62,7 +62,11 @@
       {%- for answer in answers %}
       <tr>
 	<td>{{ answer.campaign }}</td>
+	{% if (answer.name | count) > 0 %}
 	<td>{{ answer.name }}</td>
+        {% else %}
+	<td align="center">-</td>
+        {% endif %}
 	<td><a href="{{ '/chains/by-ip/' + answer.ip + '/0' }}">{{ answer.ip }}</td>
 	<td>{{ answer.position }}</td>
         <td><a href="{{ '/chains/by-hash/' + answer.chain_hash + '/0' }}">{{ answer.chain_hash }}</a></td>

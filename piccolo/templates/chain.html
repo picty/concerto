@@ -57,8 +57,12 @@
       {%- for ip in ips %}
       <tr>
 	<td>{{ ip.campaign }}</td>
+	{% if (ip.name | count) > 0 %}
 	<td>{{ ip.name }}</td>
-	<td><a href="{{ '/chains/by-ip/' + ip.ip }}">{{ ip.ip }}</td>
+        {% else %}
+	<td align="center">-</td>
+        {% endif %}
+	<td><a href="{{ '/chains/by-ip/' + ip.ip + '/0' }}">{{ ip.ip }}</td>
         <td><a href="{{ '/chains/by-hash/' + ip.chain_hash }}">{{ ip.chain_hash }}</a></td>
       </tr>
       {%- endfor %}
