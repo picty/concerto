@@ -2,21 +2,18 @@
 
 DATABASE="$1"
 ANSWER_DUMP="$2"
-BIN_DIR="$3"
-CAMPAIGN="$4"
-PROBE="$BIN_DIR/ssl-tools/probe_server"
+CAMPAIGN="$3"
 
 error () {
       echo "Error: $1" >&2
-      echo "Usage: new-campaign.sh DATABASE ANSWER_DUMP BIN_DIR CAMPAIGN"
+      echo "Usage: new-campaign.sh DATABASE ANSWER_DUMP CAMPAIGN"
       exit 1
 }
 
 
 [ -f "$DATABASE" ] || error "Database \"$DATABASE\" does not seem to be a regular file."
-[ -d "$BIN_DIR" ] || error "\"$BIN_DIR\" is an invalid directory."
-[ -f "$PROBE" ] || error "\"$PROBE\" does not exist."
 [ -n "$CAMPAIGN" ] || error "Please provide a campaign number."
+which probe_server > /dev/null || error "probe_server executable can not be found."
 
 TMP_DIR="$(mktemp -d)"
 echo "Using temporary directory \"$TMP_DIR\"."
@@ -52,7 +49,7 @@ done | grep -v '*' | sed '/^DNS: [0-9]*\.[0-9]*\.[0-9]*\.[0-9]*$/d' | cat - "$TM
 cat "$TMP_DIR/ips.txt" "$TMP_DIR/names2.txt" | sort -R > "$TMP_DIR/hosts.txt"
 
 
-"$PROBE" --hosts-file "$TMP_DIR/hosts.txt" --campaign "$CAMPAIGN" -d1 --max-parallel-requests=20 \
+probe_server --hosts-file "$TMP_DIR/hosts.txt" --campaign "$CAMPAIGN" -d1 --max-parallel-requests=20 \
    -V TLSv1.0 \
    --clear-suites \
    -A TLS_RSA_WITH_RC4_128_SHA \
