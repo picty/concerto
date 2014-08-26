@@ -22,3 +22,5 @@ Website
    (certs/by-hash/0c -> certs/by-hash/0c543534...) and try to make it work with the statification
  - Add support to filter by campaign
  - Add support to only show certain parts of the HTML and/or limit the depth of the queries
+ - Add validity range for a chain
+ - Add validity at timestamp in "chain seen n times" rows
