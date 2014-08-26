@@ -10,7 +10,11 @@
     <table border="1">
       {%- for chain in chains %}
       <tr>
-	<td><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( chain.built_chain_number | string ) }}">{{ chain.ip }}</td>
+        {% if (chain.name | count) > 0 %}
+	<td><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( chain.built_chain_number | string ) }}">{{ chain.campaign }}-{{ chain.name }} ({{ chain.ip }})</a></td>
+        {% else %}
+	<td><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( chain.built_chain_number | string ) }}">{{ chain.campaign }}-{{ chain.ip }}</a></td>
+        {% endif %}
 	<td>{{ chain.grade }}</td>
 	<td>{% if chain.trusted %}T{% elif chain.complete %}C{% endif %}{% if chain.ordered %}O{% endif %}</td>
 	<td>{{ chain.subject }}</td>

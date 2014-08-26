@@ -17,7 +17,7 @@ def get_db():
         db.row_factory = make_dicts
     return db
 
-def query_db(fields, tables, joins, conditions, args=[], order_by=[], group_by=[]):
+def query_db(fields, tables, joins, conditions, args=[], order_by=[], group_by=[], limit=None):
     if len(joins) > 0:
         join_str = "join %s" % (", ".join(joins))
     else:
@@ -34,8 +34,13 @@ def query_db(fields, tables, joins, conditions, args=[], order_by=[], group_by=[
         group_by_str = "group by %s" % (", ".join(group_by))
     else:
         group_by_str = ""
-    query = ("select %s from %s %s %s %s %s" %
-             (", ".join(fields), ", ".join(tables), join_str, cond_str, group_by_str, order_by_str))
+    if limit is None:
+        limit_str = ""
+    else:
+        limit_str = "limit %d" % limit
+    query = ("select %s from %s %s %s %s %s %s" %
+             (", ".join(fields), ", ".join(tables), join_str, cond_str,
+              group_by_str, order_by_str, limit_str))
     print query
     cur = get_db().execute(query, args)
     rv = cur.fetchall()
@@ -167,7 +172,7 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
         if len(rv) == 1:
             conditions = ["built_chains.chain_hash = ?",
                           "built_chains.built_chain_number = ?"]
-            ips = query_db (["ip"], ["answers"],
+            ips = query_db (["campaign", "name", "ip", "answers.chain_hash as chain_hash"], ["answers"],
                             ["built_chains on built_chains.chain_hash = answers.chain_hash"],
                             conditions, [rv[0]['chain_hash'], rv[0]['built_chain_number']])
             fields = ["certs.hash as cert_hash",
@@ -197,10 +202,11 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
                                    ["chain_hash = ?", "built_chain_number != ?"],
                                    [rv[0]['chain_hash'], rv[0]['built_chain_number']])
 
-            return render_template ("chain.html", ips=", ".join(map (lambda ip : ip["ip"], ips)), chain=rv[0],
+            return render_template ("chain.html", ips = ips, chain=rv[0],
                                     certs=certs, unused_certs=unused_certs, alt_chains=alt_chains)
         else:
-            fields = ["ip", "answers.chain_hash as chain_hash", "dns.name as subject",
+            fields = ["answers.campaign as campaign", "answers.name as name", "answers.ip as ip",
+                      "answers.chain_hash as chain_hash", "dns.name as subject",
                       "built_chains.built_chain_number as built_chain_number", "grade",
                       "complete", "trusted", "ordered"]
             tables = ["answers"]
@@ -208,7 +214,8 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
                      "built_links on built_links.chain_hash = built_chains.chain_hash " +
                      "and built_links.built_chain_number = built_chains.built_chain_number",
                      "certs on built_links.cert_hash = certs.hash",
-                     "dns on certs.subject_hash = dns.hash"] + sup_joins
+                     "dns on certs.subject_hash = dns.hash"] + \
+                     filter (lambda j : j != "answers on built_chains.chain_hash = answers.chain_hash", sup_joins)
             conditions = ["built_links.position_in_msg = 0"] + sup_conditions
             rv = query_db (fields, tables, joins, conditions, args,
                            order_by = ["grade DESC"], group_by = group_by)

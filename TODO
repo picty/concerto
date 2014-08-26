@@ -1,6 +1,7 @@
 Campaigns
- - Add tools to probe a list
- - Add tools to extract IPs and names from a daatabase, possibly subject to some conditions (campaign id)
+ - Proper support for multiple A records when resolving names
+ - Add tools to probe a list (adapt probe_server)
+ - Add tools to extract IPs and names from a database, possibly subject to some conditions (campaign id)
 
 AnswerDump -> CSV
  - Do not analyse links and chains too early
@@ -17,10 +18,7 @@ Analysis -> DB injection
  - Allow for progressive enrichment (links, revocation, chains)
 
 Website
- - Rewrite templates and code to take into account campaign_id and names properly
  - Add support for redirect for one cert/one chain
    (certs/by-hash/0c -> certs/by-hash/0c543534...) and try to make it work with the statification
- - chains.html should handle campaign_id + answer.name + ips
- - chain.html should handle campaign_id + answer.name + ips
  - Add support to filter by campaign
- - Add support to only show certain parts of the HTML + limit the depth of the queries
+ - Add support to only show certain parts of the HTML and/or limit the depth of the queries
