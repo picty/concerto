@@ -65,7 +65,7 @@ def get_certs(sup_joins, conditions, args, title, group_by_list = []):
     fields = ["certs.hash as hash", "version", "serial",
               "issuer_hash", "dn_i.name as issuer",
               "subject_hash", "dn_s.name as subject",
-              "notbefore", "notafter",
+              "not_before", "not_after",
               "key_type", "rsa_modulus", "rsa_exponent",
               "isCA" ]
     tables = ["certs"]
