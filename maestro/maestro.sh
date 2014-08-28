@@ -46,7 +46,9 @@ echo -n "Injecting data into the database..."
 create table answers(
        campaign int,
        ip text,
+       port int,
        name text,
+       timestamp int,
        chain_hash text,
        primary key (campaign, ip, name)
 );
@@ -91,6 +93,8 @@ create table built_chains(
        complete int,
        trusted int,
        ordered int,
+       not_before int,
+       not_after int,
        primary key (chain_hash, built_chain_number)
 );
 

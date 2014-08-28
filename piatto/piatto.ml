@@ -144,13 +144,16 @@ let populate_certs_table ops store sc =
 
 
 let populate_chains_table ops store chain_hash i (grade, built_chain) =
+  let not_before, not_after = compute_chain_validity built_chain.chain in
   ops.write_line "built_chains" "" [
     hexdump chain_hash;
     string_of_int i;
     grade;
     if built_chain.complete then "1" else "0";
     if built_chain.trusted then "1" else "0";
-    if built_chain.ordered then "1" else "0"
+    if built_chain.ordered then "1" else "0";
+    Int64.to_string not_before;
+    Int64.to_string not_after;
   ];
   List.iteri (fun pos_in_chain -> fun sc ->
     ops.write_line "built_links" "" [
@@ -182,7 +185,9 @@ let rec csv_handle_one_file ops store input =
     let certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) ctx.future.f_certificates in
     let chain_hash = CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc certs)) in
     if ops.check_key_freshness "answers" (ip_str ^ campaign ^ answer.name) then begin
-      ops.write_line "answers" (ip_str ^ campaign ^ answer.name) [campaign; ip_str; answer.name; hexdump chain_hash];
+      ops.write_line "answers" (ip_str ^ campaign ^ answer.name)
+        [campaign; ip_str; string_of_int answer.port; answer.name;
+         Int64.to_string answer.timestamp; hexdump chain_hash];
 
       if ops.check_key_freshness "chains" chain_hash then begin
 	List.iteri (fun i -> fun sc -> ops.write_line "chains" chain_hash
