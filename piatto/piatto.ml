@@ -121,8 +121,8 @@ let populate_certs_table ops store sc =
       key_type;
       rsa_modulus;
       rsa_exponent;
-      (match get_extn_by_id [85;29;19] c with
-      | Some (X509Extensions.BasicConstraints {X509Extensions.cA = Some true}) -> "1"
+      (match get_basicConstraints c.tbsCertificate.extensions with
+      | Some ({X509Extensions.cA = Some true}, _) -> "1"
       | _ -> "0")
     ];
 
@@ -236,8 +236,8 @@ let rec cas_handle_one_file certs_seen cas_file input =
 	    | None -> parse_certificate (input_of_string (hexdump h) c)
 	    | Some p -> p
 	  in
-	  match get_extn_by_id [85;29;19] parsed_c with
-	  | Some (X509Extensions.BasicConstraints {X509Extensions.cA = Some true}) ->
+	  match get_basicConstraints parsed_c.tbsCertificate.extensions with
+	  | Some ({X509Extensions.cA = Some true}, _) ->
 	    BasePTypes.dump_varlen_binstring BasePTypes.dump_uint32 o c
 	  | _ -> ()
 	with _ -> ()
