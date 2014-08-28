@@ -10,15 +10,19 @@
     <table border="1">
       <tr>
         <th>Complete</th>
-        <td>{{ chain.complete | escape }}</td>
+        <td>{{ chain.complete_str | escape }}</td>
       </tr>
       <tr>
         <th>Trusted</th>
-        <td>{{ chain.trusted | escape }}</td>
+        <td>{{ chain.trusted_str | escape }}</td>
       </tr>
       <tr>
         <th>Ordered</th>
-        <td>{{ chain.ordered | escape }}</td>
+        <td>{{ chain.ordered_str | escape }}</td>
+      </tr>
+      <tr>
+        <th>Chain validity period</th>
+        <td>{{ chain.not_before_str | escape }} --- {{ chain.not_after_str | escape }}</td>
       </tr>
     </table>
 
@@ -52,6 +56,8 @@
       <tr>
 	<th>Campaign</th>
 	<th colspan="2">Location</th>
+        <th>Timestamp</th>
+        <th>Valid?</th>
         <th>Link to the chain</th>
       </tr>
       {%- for ip in ips %}
@@ -63,6 +69,8 @@
 	<td align="center">-</td>
         {% endif %}
 	<td><a href="{{ '/chains/by-ip/' + ip.ip + '/0' }}">{{ ip.ip }}</td>
+        <td>{{ ip.timestamp_str }}</td>
+        <td>{{ ip.valid_at_timestamp }}</td>
         <td><a href="{{ '/chains/by-hash/' + ip.chain_hash }}">{{ ip.chain_hash }}</a></td>
       </tr>
       {%- endfor %}

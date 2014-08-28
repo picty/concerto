@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sqlite3, sys
+from datetime import datetime
 from flask import g, Flask, render_template, abort, session
 app = Flask(__name__)
 
@@ -60,6 +61,10 @@ def campaign_str(cid):
     else:
         return cid_s
 
+def time_str(ts):
+    dt = datetime.utcfromtimestamp(ts)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
 
 def get_certs(sup_joins, conditions, args, title, group_by_list = []):
     fields = ["certs.hash as hash", "version", "serial",
@@ -75,6 +80,10 @@ def get_certs(sup_joins, conditions, args, title, group_by_list = []):
     if rv:
         if len(rv) == 1:
             cert = rv[0]
+
+            cert["not_before_str"] = time_str (int(cert["not_before"]))
+            cert["not_after_str"] = time_str (int(cert["not_after"]))
+
             if cert['key_type'] == "RSA":
                 n = cert['rsa_modulus']
                 if n[:2] == "00":
@@ -82,12 +91,17 @@ def get_certs(sup_joins, conditions, args, title, group_by_list = []):
                 cert['key_len'] = len (n) * 4
             else:
                 cert['key_len'] = 0
-            answers = query_db (["campaign", "ip", "name", "chain_hash", "position"],
+
+            answers = query_db (["campaign", "ip", "name", "chain_hash", "position", "timestamp"],
                                 ["answers"],
                                 ["chains on chain_hash = hash"],
                                 ["cert_hash = ?"], [cert["hash"]])
             for answer in answers:
                 answer["campaign"] = campaign_str(answer["campaign"])
+                ts = int(answer["timestamp"])
+                answer["timestamp_str"] = time_str (ts)
+                answer["valid_at_timestamp"] = str (int(cert["not_before"]) <= ts and ts <= int(cert["not_after"]))
+
             names = query_db (["type", "name"], ["names"], [], ["cert_hash = ?"], [cert["hash"]])
             issuers = query_db (["certs.hash as hash", "dns.name as name"], ["dns"],
                                 ["certs on certs.subject_hash = dns.hash",
@@ -168,7 +182,8 @@ def cert_by_exact_https_name_bis(type, name):
 def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
     fields = ["built_chains.chain_hash as chain_hash", "dns.name as subject",
               "built_chains.built_chain_number as built_chain_number",
-              "grade", "complete", "trusted", "ordered"]
+              "grade", "complete", "trusted", "ordered",
+              "built_chains.not_before as not_before", "built_chains.not_after as not_after"]
     tables = ["built_chains"]
     joins = ["built_links on built_links.chain_hash = built_chains.chain_hash " +
                "and built_links.built_chain_number = built_chains.built_chain_number",
@@ -179,13 +194,25 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
                    order_by = ["grade DESC"], group_by = group_by)
     if rv:
         if len(rv) == 1:
+            chain = rv[0]
+
+            for s in ["ordered", "trusted", "complete"]:
+                chain[s + "_str"] = str (int(chain[s]) == 1)
+            chain["not_before_str"] = time_str (int(chain["not_before"]))
+            chain["not_after_str"] = time_str (int(chain["not_after"]))
+
             conditions = ["built_chains.chain_hash = ?",
                           "built_chains.built_chain_number = ?"]
-            ips = query_db (["campaign", "name", "ip", "answers.chain_hash as chain_hash"], ["answers"],
+            ips = query_db (["campaign", "name", "ip", "answers.timestamp as timestamp",
+                             "answers.chain_hash as chain_hash"], ["answers"],
                             ["built_chains on built_chains.chain_hash = answers.chain_hash"],
-                            conditions, [rv[0]['chain_hash'], rv[0]['built_chain_number']])
+                            conditions, [chain['chain_hash'], chain['built_chain_number']])
             for ip in ips:
                 ip["campaign"] = campaign_str(ip["campaign"])
+                ts = int(ip["timestamp"])
+                ip["timestamp_str"] = time_str (ts)
+                ip["valid_at_timestamp"] = str (int(chain["not_before"]) <= ts and ts <= int(chain["not_after"]))
+
             fields = ["certs.hash as cert_hash",
                       "dns.name as subject",
                       "position_in_msg"]
@@ -196,7 +223,7 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
                           "built_chain_number = ?"]
             order_by = ["position_in_chain ASC"]
             certs = query_db (fields, tables, joins, conditions,
-                              [rv[0]['chain_hash'], rv[0]['built_chain_number']], order_by)
+                              [chain['chain_hash'], chain['built_chain_number']], order_by)
 
             fields = ["certs.hash as cert_hash",
                       "dns.name as subject",
@@ -207,19 +234,20 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
             conditions = ["unused_certs.chain_hash = ?",
                           "built_chain_number = ?"]
             unused_certs = query_db (fields, tables, joins, conditions,
-                              [rv[0]['chain_hash'], rv[0]['built_chain_number']])
+                              [chain['chain_hash'], chain['built_chain_number']])
 
             alt_chains = query_db (["grade", "built_chain_number"], ["built_chains"], [],
                                    ["chain_hash = ?", "built_chain_number != ?"],
-                                   [rv[0]['chain_hash'], rv[0]['built_chain_number']])
+                                   [chain['chain_hash'], chain['built_chain_number']])
 
-            return render_template ("chain.html", ips = ips, chain=rv[0],
+            return render_template ("chain.html", ips = ips, chain=chain,
                                     certs=certs, unused_certs=unused_certs, alt_chains=alt_chains)
         else:
             fields = ["answers.campaign as campaign", "answers.name as name", "answers.ip as ip",
-                      "answers.chain_hash as chain_hash", "dns.name as subject",
-                      "built_chains.built_chain_number as built_chain_number", "grade",
-                      "complete", "trusted", "ordered"]
+                      "answers.chain_hash as chain_hash", "answers.timestamp as timestamp", "dns.name as subject",
+                      "built_chains.built_chain_number as built_chain_number",
+                      "built_chains.not_before as not_before", "built_chains.not_after as not_after",
+                      "grade", "complete", "trusted", "ordered"]
             tables = ["answers"]
             joins = ["built_chains on built_chains.chain_hash = answers.chain_hash",
                      "built_links on built_links.chain_hash = built_chains.chain_hash " +
@@ -232,6 +260,9 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
                            order_by = ["grade DESC"], group_by = group_by)
             for result in rv:
                 result["campaign"] = campaign_str(result["campaign"])
+                ts = int(result["timestamp"])
+                result["timestamp_str"] = time_str (ts)
+                result["valid_at_timestamp"] = str (int(result["not_before"]) <= ts and ts <= int(result["not_after"]))
             
             return render_template ("chains.html", chains = rv, title = title)
     else:

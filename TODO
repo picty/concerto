@@ -16,11 +16,12 @@ DB injection
 
 Analysis -> DB injection
  - Allow for progressive enrichment (links, revocation, chains)
+ - links table should contain all possible links (subject/issuer) and states wheteher the link
+   is valid or not (and also the reason, to avoid complicated research with the raw data)
 
 Website
  - Add support for redirect for one cert/one chain
    (certs/by-hash/0c -> certs/by-hash/0c543534...) and try to make it work with the statification
  - Add support to filter by campaign
  - Add support to only show certain parts of the HTML and/or limit the depth of the queries
- - Add validity range for a chain
- - Add validity at timestamp in "chain seen n times" rows
+ - Use Bootstrap to render the results properly

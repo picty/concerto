@@ -8,6 +8,15 @@
     {{ chains | count }} candidates found:
 
     <table border="1">
+      <th>Campaign</th>
+      <th colspan="2">Location</th>
+      <th>Timestamp</th>
+      <th>Chain</th>
+      <th>Grade</th>
+      <th>T/C/I</th>
+      <th>O?</th>
+      <th>Valid?</th>
+      <th>Subject</th>
       {%- for chain in chains %}
       <tr>
 	<td>{{ chain.campaign }}</td>
@@ -17,9 +26,12 @@
 	<td align="center">-</td>
         {% endif %}
 	<td><a href="{{ '/chains/by-ip/' + chain.ip + '/0' }}">{{ chain.ip }}</a></td>
+        <td>{{ chain.timestamp_str }}</td>
 	<td><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( chain.built_chain_number | string ) }}">Chain</a></td>
 	<td>{{ chain.grade }}</td>
-	<td>{% if chain.trusted %}T{% elif chain.complete %}C{% endif %}{% if chain.ordered %}O{% endif %}</td>
+	<td align="center">{% if chain.trusted %}Trusted{% elif chain.complete %}Complete{% else %}Incomplete{% endif %}</td>
+	<td align="center">{% if chain.ordered %}Ordered{% else %}-{% endif %}</td>
+        <td align="center">{{ chain.valid_at_timestamp }}</td>
 	<td>{{ chain.subject }}</td>
       </tr>
       {%- endfor %}
