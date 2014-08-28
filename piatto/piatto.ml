@@ -82,13 +82,6 @@ let prepare_csv_output_dir () =
     close_all_files; dump_file }
 
 
-let string_of_der_time = function
-  | X509Basics.UTCTime t -> Asn1PTypes.string_of_time_content t
-  | X509Basics.GeneralizedTime t -> Asn1PTypes.string_of_time_content t
-  | X509Basics.UnparsedTime _ -> "UNPARSED TIME"
-
-
-
 let populate_certs_table ops store sc =
   let h = hash_of_sc sc
   and c = cert_of_sc sc in
@@ -110,14 +103,15 @@ let populate_certs_table ops store sc =
       | UnparsedPublicKey _ -> "Unknown", "", ""
     in
 
+    let not_before, not_after = validity_of_sc sc in
     ops.write_line "certs" h [
       hexdump h;
       (match c.tbsCertificate.version with None -> "1" | Some i -> (string_of_int (i+1)));
       hexdump c.tbsCertificate.serialNumber;
       hexdump subject_hash;
       hexdump issuer_hash;
-      string_of_der_time (c.tbsCertificate.validity.X509Basics.notBefore);
-      string_of_der_time (c.tbsCertificate.validity.X509Basics.notAfter);
+      Int64.to_string not_before;
+      Int64.to_string not_after;
       key_type;
       rsa_modulus;
       rsa_exponent;
