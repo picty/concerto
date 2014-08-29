@@ -84,7 +84,7 @@
       {%- for name in names %}
       <tr>
 	<td>{{ name.type }}</td>
-	<td>{{ name.name }}</td>
+	<td><a href="{{ '/certs/by-exact-https-name/' + name.type + '/' + name.name }}">{{ name.name }}</td>
       </tr>
       {%- endfor %}
     </table>
