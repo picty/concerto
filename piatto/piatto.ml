@@ -105,7 +105,10 @@ let populate_certs_table ops store sc =
       | UnparsedPublicKey _ -> "Unknown", "", ""
     in
 
-    let not_before, not_after = validity_of_sc sc in
+    let not_before, not_after =
+      try validity_of_sc sc
+      with Failure "validity_of_sc" -> -1L, -1L
+    in
     ops.write_line "certs" h [
       hexdump h;
       (match c.tbsCertificate.version with None -> "1" | Some i -> (string_of_int (i+1)));
@@ -140,7 +143,10 @@ let populate_certs_table ops store sc =
 
 
 let populate_chains_table ops store chain_hash i (grade, built_chain) =
-  let not_before, not_after = compute_chain_validity built_chain.chain in
+  let not_before, not_after =
+    try compute_chain_validity built_chain.chain
+    with Failure "validity_of_sc" -> -1L, -1L
+  in
   ops.write_line "built_chains" "" [
     hexdump chain_hash;
     string_of_int i;
