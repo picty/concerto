@@ -7,8 +7,10 @@ open Base64
 open Lwt
 open LwtUtil
 open AnswerDump
+open Ssl2
 open Tls
-open TlsEngineNG
+open TlsEnums
+open AnswerDumpUtil
 
 
 let verbose = ref false
@@ -169,25 +171,49 @@ let populate_chains_table ops store chain_hash i (grade, built_chain) =
 
 let rec csv_handle_one_file ops store input =
   let finalize_ok answer =
-    let ctx = empty_context (default_prefs DummyRNG) in
     let ip_str = string_of_v2_ip answer.ip_addr in
     let campaign = string_of_int answer.campaign in
+    (* TODO: Is this useful? *)
     enrich_record_content := true;
-    let answer_input = input_of_string ip_str answer.content in
-    ignore (parse_all_records ServerToClient (Some ctx) answer_input);
+    let parsed_answer = parse_answer DefaultEnrich false answer in
 
-    let certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) ctx.future.f_certificates in
+    let raw_certs = match parsed_answer.pa_content with
+      | TLSHandshake (_, _, _, certs) -> certs
+      | SSLv2Handshake (_, _, cert) -> [cert]
+      | _ -> []
+    in
+    let certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) raw_certs in
+
+    let answer_type, version, ciphersuite, alert_level, alert_type = match parsed_answer.pa_content with
+      | Empty -> "0", "", "", "", ""
+      | Junk _ -> "1", "", "", "", ""
+      | SSLv2Handshake (v, [], _) -> string_of_int (int_of_tls_version v), "", "", "", ""
+
+      | SSLv2Alert e ->
+         "10", "2", "", "2", string_of_int (int_of_ssl2_error e)
+      | TLSAlert (v, al, at) ->
+         "11", string_of_int (int_of_tls_version v), "",
+         string_of_int (int_of_tls_alert_level al), string_of_int (int_of_tls_alert_type at)
+
+      | SSLv2Handshake (v, c::_, _) ->
+         "20", string_of_int (int_of_tls_version v), string_of_int (int_of_ciphersuite c), "", ""
+      | TLSHandshake (_, v, c, _) ->
+         "21", string_of_int (int_of_tls_version v), string_of_int (int_of_ciphersuite c), "", ""
+    in
+
     let chain_hash = CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc certs)) in
     if ops.check_key_freshness "answers" (ip_str ^ campaign ^ answer.name) then begin
       ops.write_line "answers" (ip_str ^ campaign ^ answer.name)
         [campaign; ip_str; string_of_int answer.port; answer.name;
-         Int64.to_string answer.timestamp; hexdump chain_hash];
+         Int64.to_string answer.timestamp;
+         answer_type; version; ciphersuite; alert_level; alert_type;
+         hexdump chain_hash];
 
       if ops.check_key_freshness "chains" chain_hash then begin
 	List.iteri (fun i -> fun sc -> ops.write_line "chains" chain_hash
 	  [hexdump chain_hash; string_of_int i; hexdump (hash_of_sc sc)]) certs;
 
-	let built_chains = build_certchain certs store in
+	let built_chains = build_certchain (Some 3) certs store in
 	List.iteri (populate_chains_table ops store chain_hash) (rate_and_sort_chains built_chains);
 	List.iter (populate_certs_table ops store) certs
       end
@@ -209,17 +235,22 @@ let rec csv_handle_one_file ops store input =
 
 let rec cas_handle_one_file certs_seen cas_file input =
   let finalize_ok answer =
-    let ctx = empty_context (default_prefs DummyRNG) in
-    let ip_str = string_of_v2_ip answer.ip_addr in
+    (* TODO: Is this useful? *)
     enrich_record_content := true;
-    let answer_input = input_of_string ip_str answer.content in
-    ignore (parse_all_records ServerToClient (Some ctx) answer_input);
+    let parsed_answer = parse_answer DefaultEnrich false answer in
+
+    let raw_certs = match parsed_answer.pa_content with
+      | TLSHandshake (_, _, _, certs) -> certs
+      | SSLv2Handshake (_, _, cert) -> [cert]
+      | _ -> []
+    in
     let extract_cert = function
       | PTypes.Parsed (Some raw, parsed_c) -> raw, Some parsed_c
       | PTypes.Parsed (None, _) -> failwith "Should not happen: certificates must not be parsed until it's time."
       | PTypes.Unparsed c -> c, None
     in
-    let certs = List.map extract_cert ctx.future.f_certificates in
+    let certs = List.map extract_cert raw_certs in
+
     let o = POutput.create () in
     List.iter (fun (c, parsed_opt) ->
       let h = CryptoUtil.sha1sum c in
@@ -288,7 +319,7 @@ let _ =
       let parsed_certs = List.mapi parse_and_number certs in
       if !cas_filename <> ""
       then load_cas_bundle false ca_store !cas_filename;
-      let chains = build_certchain parsed_certs ca_store in
+      let chains = build_certchain (Some 3) parsed_certs ca_store in
       List.iter (fun (g, c) -> print_endline g; print_chain c; print_newline ()) (rate_and_sort_chains chains)
 
     | "dump2csv"::dump_files ->

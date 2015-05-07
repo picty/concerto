@@ -49,6 +49,13 @@ create table answers(
        port int,
        name text,
        timestamp int,
+
+       answer_type int,
+       version int,
+       ciphersuite int,
+       alert_level int,
+       alert_type int,
+
        chain_hash text,
        primary key (campaign, ip, name)
 );
