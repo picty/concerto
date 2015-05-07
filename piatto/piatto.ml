@@ -188,7 +188,14 @@ let rec csv_handle_one_file ops store input =
       | SSLv2Handshake (_, _, cert) -> [cert]
       | _ -> []
     in
-    let certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) raw_certs in
+    (* TODO: Handle broken certificates in a better way? *)
+    let unchecked_certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) raw_certs in
+    let checked_certs =
+      try
+        ignore (List.map cert_of_sc unchecked_certs);
+        unchecked_certs
+      with _ -> []
+    in
 
     let answer_type, version, ciphersuite, alert_level, alert_type = match parsed_answer.pa_content with
       | Empty -> "0", "", "", "", ""
@@ -207,7 +214,7 @@ let rec csv_handle_one_file ops store input =
          "21", string_of_int (int_of_tls_version v), string_of_int (int_of_ciphersuite c), "", ""
     in
 
-    let chain_hash = CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc certs)) in
+    let chain_hash = CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc unchecked_certs)) in
     if ops.check_key_freshness "answers" (ip_str ^ campaign ^ answer.name) then begin
       ops.write_line "answers" (ip_str ^ campaign ^ answer.name)
         [campaign; ip_str; string_of_int answer.port; answer.name;
@@ -217,11 +224,11 @@ let rec csv_handle_one_file ops store input =
 
       if ops.check_key_freshness "chains" chain_hash then begin
 	List.iteri (fun i -> fun sc -> ops.write_line "chains" chain_hash
-	  [hexdump chain_hash; string_of_int i; hexdump (hash_of_sc sc)]) certs;
+	  [hexdump chain_hash; string_of_int i; hexdump (hash_of_sc sc)]) unchecked_certs;
 
-	let built_chains = build_certchain (Some 3) certs store in
+	let built_chains = build_certchain (Some 3) checked_certs store in
 	List.iteri (populate_chains_table ops store chain_hash) (rate_and_sort_chains built_chains);
-	List.iter (populate_certs_table ops store) certs
+	List.iter (populate_certs_table ops store) checked_certs
       end
     end;
     csv_handle_one_file ops store input
