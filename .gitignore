@@ -1,2 +1,5 @@
 *~
 *.pyc
+*.cmi
+*.cmo
+*.cmx
