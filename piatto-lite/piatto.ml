@@ -8,7 +8,7 @@ open Tls
 open TlsEnums
 open X509Util
 open AnswerDumpUtil
-open CsvOps
+open FileOps
 
 
 let verbose = ref false
@@ -67,7 +67,7 @@ let rec handle_one_file ops input =
 	  [hexdump chain_hash; string_of_int i; hexdump (hash_of_sc sc)]) unchecked_certs;
       end;
 
-      let save_cert sc = ops.dump_file (hexdump (hash_of_sc sc)) (raw_value_of_sc sc)
+      let save_cert sc = ops.dump_file "certs" (hexdump (hash_of_sc sc)) (raw_value_of_sc sc)
       in List.iter save_cert unchecked_certs
     end;
     handle_one_file ops input
