@@ -1,7 +1,9 @@
 # configurable section
-TARGETS = piatto
+TARGETS = piatto parseCerts prepareLinks
 
 piatto_SRCS := csvOps.ml piatto.ml
+parseCerts_SRCS := csvOps.ml parseCerts.ml
+prepareLinks_SRCS := csvOps.ml prepareLinks.ml
 
 # comment this line if not using camlp4
 USE_CAMLP4 = yes

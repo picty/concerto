@@ -7,3 +7,10 @@ Concerto: a set of tools to extract, analyse and browse certificates and chains:
  - fagotto, a program to produce report
 
  - maestro, to wrap it up
+
+
+Currently, we need to call some programs one after the other:
+ - piatto-lite (*.dump -> answers.csv + chains.csv + raw/ [certs])
+ - merge-certs (certs */raw)
+ - parseCerts (certs/* -> certs.csv + dns.csv + names.csv + unparsed.csv
+ - prepareLinks [Needs to see the whole certs.csv!]
