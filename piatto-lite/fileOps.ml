@@ -81,7 +81,7 @@ let prepare_csv_output_dir output_dir =
         read_existing_files in_f keys;
 
         let out_f = Unix.out_channel_of_descr wrfd in
-
+        seek_out out_f (out_channel_length out_f);
 	Hashtbl.replace open_binfiles (filetype, prefix) (in_f, out_f, keys);
 	in_f, out_f, keys
   in
@@ -114,7 +114,7 @@ let prepare_csv_output_dir output_dir =
     if not (Hashtbl.mem keys name) then begin
       let name_len = String.length name
       and contents_len = String.length contents in
-      seek_out f (out_channel_length f);
+      (*      seek_out f (out_channel_length f); *) (* TODO: This does *NOT* work. *)
       output_byte f ((name_len lsr 8) land 255);
       output_byte f (name_len land 255);
       output_string f name;
