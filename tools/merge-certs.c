@@ -28,7 +28,7 @@ int main (int argc, char* argv[]) {
     dir = opendir (argv[i]);
     if (dir == NULL) {
       fprintf (stderr, "Invalid directory: %s\n", argv[i]);
-      exit (1);
+      continue;
     }
     while ((entry = readdir(dir)) != NULL) {
       char* certname;
