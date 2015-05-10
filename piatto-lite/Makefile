@@ -1,9 +1,13 @@
 # configurable section
-TARGETS = piatto parseCerts prepareLinks
+TARGETS = piatto parseCerts prepareLinks writeLine dumpFile readFile listFiles
 
 piatto_SRCS := csvOps.ml piatto.ml
 parseCerts_SRCS := csvOps.ml parseCerts.ml
 prepareLinks_SRCS := csvOps.ml prepareLinks.ml
+writeLine_SRCS := fileOps.ml writeLine.ml
+dumpFile_SRCS := fileOps.ml dumpFile.ml
+readFile_SRCS := fileOps.ml readFile.ml
+listFiles_SRCS := fileOps.ml listFiles.ml
 
 # comment this line if not using camlp4
 USE_CAMLP4 = yes

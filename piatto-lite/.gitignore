@@ -2,3 +2,7 @@ build
 piatto
 parseCerts
 prepareLinks
+writeLine
+dumpFile
+readFile
+listFiles
