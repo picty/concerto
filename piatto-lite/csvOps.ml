@@ -43,11 +43,9 @@ let prepare_csv_output_dir output_dir =
       if name_len < 5
       then open_out (output_dir ^ "/raw/" ^ name)
       else begin
-        let xx = String.sub name 0 2
-        and yy = String.sub name 2 2 in
+        let xx = String.sub name 0 2 in
         try_mkdir (output_dir ^ "/raw/" ^ xx) 0o755;
-        try_mkdir (output_dir ^ "/raw/" ^ xx ^ "/" ^ yy) 0o755;
-        open_out (output_dir ^ "/raw/" ^ xx ^ "/" ^ yy ^ "/" ^ name)
+        open_out (output_dir ^ "/raw/" ^ xx ^ "/" ^ name)
       end
     in
     output_string f content;
