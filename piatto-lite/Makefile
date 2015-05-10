@@ -1,7 +1,7 @@
 # configurable section
 TARGETS = piatto
 
-piatto_SRCS := piatto.ml
+piatto_SRCS := csvOps.ml piatto.ml
 
 # comment this line if not using camlp4
 USE_CAMLP4 = yes

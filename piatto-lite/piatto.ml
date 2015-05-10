@@ -1,6 +1,5 @@
 open Parsifal
 open Getopt
-
 open Lwt
 open LwtUtil
 open AnswerDump
@@ -9,6 +8,7 @@ open Tls
 open TlsEnums
 open X509Util
 open AnswerDumpUtil
+open CsvOps
 
 
 let verbose = ref false
@@ -19,56 +19,6 @@ let options = [
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
   mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory for dump2html or dump2csv";
 ]
-
-
-(* CSV stuff *)
-
-type csv_ops = {
-  check_key_freshness : string -> string -> bool;
-  close_all_files : unit -> unit;
-  write_line : string -> string -> string list -> unit;
-  dump_file : string -> string -> unit;
-}
-
-let prepare_csv_output_dir () =
-  Unix.mkdir !output_dir 0o755;
-  Unix.mkdir (!output_dir ^ "/raw") 0o755;
-  let open_files = Hashtbl.create 10 in
-  let dumped_files = Hashtbl.create 10 in
-  let open_file csv_name =
-    try
-      Hashtbl.find open_files csv_name
-    with
-      Not_found ->
-	let f = open_out (!output_dir ^ "/" ^ csv_name ^ ".csv") in
-	let keys = Hashtbl.create 100 in
-	Hashtbl.replace open_files csv_name (f, keys);
-	f, keys
-  in
-  let check_key_freshness csv_name key =
-    let _, keys = open_file csv_name in
-    not (Hashtbl.mem keys key)
-  and write_line csv_name key line =
-    let f, keys = open_file csv_name in
-    output_string f (String.concat ":" (List.map quote_string line));
-    output_string f "\n";
-    Hashtbl.replace keys key ()
-  and close_all_files () =
-    let close_file _ (f, _) = close_out f in
-    Hashtbl.iter close_file open_files;
-    Hashtbl.clear open_files
-  and dump_file name content =
-    if not (Hashtbl.mem dumped_files name)
-    then begin
-      let f = open_out (!output_dir ^ "/raw/" ^ name) in
-      output_string f content;
-      close_out f;
-      Hashtbl.replace dumped_files name ()
-    end
-  in
-  { check_key_freshness; write_line;
-    close_all_files; dump_file }
-
 
 
 let rec handle_one_file ops input =
@@ -136,7 +86,7 @@ let rec handle_one_file ops input =
 let _ =
   let dump_files = parse_args ~progname:"piatto" options Sys.argv in
   try
-    let ops = prepare_csv_output_dir () in
+    let ops = prepare_csv_output_dir !output_dir in
     let open_files = function
       | [] -> input_of_channel ~verbose:(!verbose) "(stdin)" Lwt_io.stdin >>= fun x -> return [x]
       | _ -> Lwt_list.map_s input_of_filename dump_files
