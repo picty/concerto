@@ -26,6 +26,10 @@ int main (int argc, char* argv[]) {
     struct dirent* entry;
 
     dir = opendir (argv[i]);
+    if (dir == NULL) {
+      fprintf (stderr, "Invalid directory: %s\n", argv[i]);
+      exit (1);
+    }
     while ((entry = readdir(dir)) != NULL) {
       char* certname;
       char* srcfile = NULL;
@@ -39,7 +43,7 @@ int main (int argc, char* argv[]) {
 
       certname = entry->d_name;
       if (strlen (certname) < 5) {
-        fprintf (stderr, "%s is not a valid cert name.\n", certname);
+        fprintf (stderr, "%s is not a valid cert name\n", certname);
         exit (1);
       }
 
@@ -50,7 +54,7 @@ int main (int argc, char* argv[]) {
                      certname[1], certname[2], certname[3]) == -1) ||
           (asprintf (&dstfile, "%s/%c%c/%c%c/%s", dest, certname[0],
                      certname[1], certname[2], certname[3], certname) == -1)) {
-        fprintf (stderr, "Error while allocating strings.\n");
+        fprintf (stderr, "Error while allocating strings\n");
         exit (1);
       }
 
@@ -58,14 +62,14 @@ int main (int argc, char* argv[]) {
         if (rename (srcfile, srcfile_backup) != 0 ||
             link (dstfile, srcfile) != 0 ||
             unlink (srcfile_backup) != 0) {
-          printf ("Error while handling removing %s and linking it to %s.\n", srcfile, dstfile);
+          printf ("Error while handling removing %s and linking it to %s\n", srcfile, dstfile);
           exit (1);
         }
       } else {
         mkdir (dstdir1, 0755);
         mkdir (dstdir2, 0755);
         if (link (srcfile, dstfile) != 0) {;
-          printf ("Error while linking linking %s to %s.\n", dstfile, srcfile);
+          printf ("Error while linking linking %s to %s\n", dstfile, srcfile);
           exit (1);
         }
       }
