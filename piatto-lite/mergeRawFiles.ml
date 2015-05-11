@@ -26,4 +26,6 @@ let _ =
     in_ops.close_all_files ();
     out_ops.close_all_files ()
   with
-    | e -> prerr_endline (Printexc.to_string e); exit 1
+  | e ->
+    let current_prog = String.concat " " (Array.to_list Sys.argv) in
+    prerr_endline ("[" ^ current_prog ^ "] " ^ (Printexc.to_string e)); exit 1

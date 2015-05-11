@@ -94,5 +94,9 @@ let _ =
     Lwt_unix.run (open_files dump_files >>= Lwt_list.iter_s (handle_one_file ops));
     ops.close_all_files ()
   with
-    | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
-    | e -> prerr_endline (Printexc.to_string e); exit 1
+    | ParsingException (e, h) -> 
+      let current_prog = String.concat " " (Array.to_list Sys.argv) in
+      prerr_endline ("[" ^ current_prog ^ "] " ^ (string_of_exception e h)); exit 1
+    | e ->
+      let current_prog = String.concat " " (Array.to_list Sys.argv) in
+      prerr_endline ("[" ^ current_prog ^ "] " ^ (Printexc.to_string e)); exit 1
