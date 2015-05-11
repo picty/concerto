@@ -1,0 +1,31 @@
+= Write a multi-merge =
+
+= Add an index to raw/ =
+
+The idea would be that opening raw, the code would open raw/certs.index with namelen/name/offset/len for each cert and update it at the end.
+
+When loading the first raw/certs/?
+ - look for raw/certs.index
+   => if it exists, load the data
+   => if it does not, rebuild the index with rebuild_index (which is essentially what we do now)
+ - do as before
+
+When adding a file raw/certs/? that does not exist
+ - remove raw/certs.index.bak if it existed
+ - rename raw/certs.index raw/certs.index.bak
+ - mark certs as dirty
+ - do as before
+
+When closing all
+ - for each dirty filetype
+ - rewrite the index
+ - remove raw/certs.index.bak
+
+
+This would allow for
+ - better perfs
+ - a clear update path
+ - a way to list all certs easily
+
+
+= Add a R ^ W for dumped files ? =
