@@ -1,6 +1,6 @@
 open Parsifal
 open Getopt
-open CsvOps
+open FileOps
 
 let verbose = ref false
 let output_dir = ref ""
@@ -8,7 +8,7 @@ let output_dir = ref ""
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory for dump2html or dump2csv";
+  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory";
 ]
 
 
@@ -38,7 +38,7 @@ let read_csv csvname =
   let rec handle_line f =
     let line = try Some (input_line f) with End_of_file -> None in
     match line with
-    | None -> ()
+    | None -> close_in f
     | Some l ->
       add_line l;
       handle_line f

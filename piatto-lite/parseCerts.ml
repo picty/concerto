@@ -2,15 +2,19 @@ open Parsifal
 open X509
 open X509Util
 open Getopt
-open CsvOps
+open FileOps
 
 let verbose = ref false
 let output_dir = ref ""
+let input_dir = ref ""
+let file_type = ref ""
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory for dump2html or dump2csv";
+  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory for parsed data";
+  mkopt (Some 'i') "input-dir" (StringVal input_dir) "set the input directory containing raw certs";
+  mkopt (Some 't') "file-type" (StringVal file_type) "...";
 ]
 
 
@@ -73,42 +77,24 @@ let populate_certs_table ops sc =
       ops.write_line "unparsed_certs" h [hexdump h; Printexc.to_string e]
   end
 
-
-let handle_one_file ops dirname filename =
-  let raw_content = get_file_content (dirname ^ "/" ^ filename) in
-  let sc = sc_of_raw_value filename false raw_content in
-  populate_certs_table ops sc
-
-
-let handle_one_dir ops dirname =
-  let h = Unix.opendir dirname in
-  let rec handle_next_file () =
-    let next, again =
-      try
-        let n = Unix.readdir h in
-        let s = Unix.stat (dirname ^ "/" ^ n) in
-        if s.Unix.st_kind=Unix.S_REG
-        then Some n, true
-        else None, true
-      with End_of_file -> None, false
-    in
-    begin
-      match next with
-      | None -> ()
-      | Some name -> handle_one_file ops dirname name
-    end;
-    if again then handle_next_file ()
+let handle_one_prefix out_ops in_ops file_type prefix =
+  let files = in_ops.list_files file_type prefix in
+  let handle_one_file (name, _, _) =
+    let raw_contents = in_ops.read_file file_type name in
+    let sc = sc_of_raw_value name false raw_contents in
+    populate_certs_table out_ops sc
   in
-  handle_next_file ()
-
+  List.iter handle_one_file files
 
 
 let _ =
-  let dirs = parse_args ~progname:"parse-certs" options Sys.argv in
+  let prefixes = parse_args ~progname:"parse-certs" options Sys.argv in
   try
-    let ops = prepare_csv_output_dir !output_dir in
-    List.iter (handle_one_dir ops) dirs;
-    ops.close_all_files ()
+    let output_ops = prepare_csv_output_dir !output_dir
+    and input_ops = prepare_csv_output_dir !input_dir in
+    List.iter (handle_one_prefix output_ops input_ops !file_type) prefixes;
+    output_ops.close_all_files ();
+    input_ops.close_all_files ()
   with
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
     | e -> prerr_endline (Printexc.to_string e); exit 1

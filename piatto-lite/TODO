@@ -1,5 +1,3 @@
-= Write a multi-merge =
-
 = Add an index to raw/ =
 
 The idea would be that opening raw, the code would open raw/certs.index with namelen/name/offset/len for each cert and update it at the end.

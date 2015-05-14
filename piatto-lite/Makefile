@@ -2,8 +2,8 @@
 TARGETS = piatto parseCerts prepareLinks writeLine dumpFile readFile listFiles mergeRawFiles
 
 piatto_SRCS := fileOps.ml piatto.ml
-parseCerts_SRCS := csvOps.ml parseCerts.ml
-prepareLinks_SRCS := csvOps.ml prepareLinks.ml
+parseCerts_SRCS := fileOps.ml parseCerts.ml
+prepareLinks_SRCS := fileOps.ml prepareLinks.ml
 writeLine_SRCS := fileOps.ml writeLine.ml
 dumpFile_SRCS := fileOps.ml dumpFile.ml
 readFile_SRCS := fileOps.ml readFile.ml

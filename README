@@ -11,6 +11,22 @@ Concerto: a set of tools to extract, analyse and browse certificates and chains:
 
 Currently, we need to call some programs one after the other:
  - piatto-lite (*.dump -> answers.csv + chains.csv + raw/ [certs])
- - merge-certs (certs */raw)
+ - merge-certs (fusion des raw/certs/*)
  - parseCerts (certs/* -> certs.csv + dns.csv + names.csv + unparsed.csv
  - prepareLinks [Needs to see the whole certs.csv!]
+
+
+
+= Example on a campaign =
+
+make -j 8 $( for i in 0[67]*/?/*.dump; do echo ${i/.dump/.piatto}; done )
+
+~/dev/research/concerto/piatto-lite/mergeRawFiles -t certs -o common $(for x in 0[67]*/?/*.piatto; do echo -i $x; done) $(for i in $(seq 0 255); do printf "%2.2x " $i; done) -v
+
+for i in 0[45]*/?/*.piatto/raw/certs/*.pack; do rm -f $i; done
+
+sort -u 0[45]*/?/*.piatto/chains.csv > chains.csv
+
+parseCerts -o parsed-certs -i common -t certs 00 01
+
+prepareLinks ...
