@@ -1,6 +1,7 @@
 open Parsifal
 open X509
 open X509Util
+open X509Extensions
 open Getopt
 open FileOps
 
@@ -44,8 +45,18 @@ let populate_certs_table ops sc =
         with Failure "validity_of_sc" -> -1L, -1L
       in
 
+      let ski = match get_subjectKeyIdentifier c.tbsCertificate.extensions with
+        | Some (ski, _) -> hexdump ski
+        | None -> ""
+      and aki_serial, aki_ki = match get_authorityKeyIdentifier c.tbsCertificate.extensions with
+        | Some ({keyIdentifier = Some aki_ki; authorityCertSerialNumber = Some aki_serial}, _) -> hexdump aki_serial, hexdump aki_ki
+        | Some ({keyIdentifier = Some aki_ki}, _) -> "", hexdump aki_ki
+        | Some ({authorityCertSerialNumber = Some aki_serial}, _) -> hexdump aki_serial, ""
+        | _ -> "", ""
+      in
+
       let names_extracted = extract_dns_and_ips c in
-      
+
       ops.write_line "certs" h [
       hexdump h;
         (match c.tbsCertificate.version with None -> "1" | Some i -> (string_of_int (i+1)));
@@ -59,7 +70,10 @@ let populate_certs_table ops sc =
         rsa_exponent;
         (match get_basicConstraints c.tbsCertificate.extensions with
         | Some ({X509Extensions.cA = Some true}, _) -> "1"
-        | _ -> "0")
+        | _ -> "0");
+        ski;
+        aki_ki;
+        aki_serial;
       ];
 
       if ops.check_key_freshness "dns" subject_hash

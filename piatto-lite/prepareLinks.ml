@@ -27,17 +27,14 @@ let unquote s =
   try ignore (String.index result '"'); failwith "unquote: too many quotes!"
   with Not_found -> result
 
-let is_ca version isCA = isCA = "\"1\"" || (version = "\"1\"" && !accept_v1_ca)
+let is_ca version isCA = isCA = "1" || (version = "1" && !accept_v1_ca)
 
 let add_line l =
-  match string_split ':' l with
-  | cert_hash::version::_serial::subject_hash::issuer_hash::
-      _not_before::_not_after::_key_type::_rsa_modulus::_rsa_exponent::isCA::_ ->
-    let cert_hash = unquote cert_hash
-    and issuer_hash = unquote issuer_hash
-    and subject_hash = unquote subject_hash in
-    Hashtbl.add issuer_hash_by_cert_hash cert_hash issuer_hash;
-    if is_ca version isCA then Hashtbl.add cert_hash_by_subject_hash subject_hash cert_hash
+  match List.map unquote (string_split ':' l) with
+  | cert_hash::version::serial::subject_hash::issuer_hash::
+      _not_before::_not_after::_key_type::_rsa_modulus::_rsa_exponent::isCA::ski::aki_ki::aki_serial::_ ->
+    Hashtbl.add issuer_hash_by_cert_hash cert_hash (issuer_hash, aki_ki, aki_serial);
+    if is_ca version isCA then Hashtbl.add cert_hash_by_subject_hash subject_hash (cert_hash, ski, serial)
   | _ -> ()
 
 let read_csv csvname =
@@ -52,15 +49,17 @@ let read_csv csvname =
   in
   handle_line f
 
-let write_possible_links ops cert_hash issuer_hash =
-  let possible_issuers = Hashtbl.find_all cert_hash_by_subject_hash issuer_hash in
-  let write_possible_issuer i = ops.write_line "possible_links" "" [cert_hash; i] in
-  List.iter write_possible_issuer possible_issuers
+let filter_fun aki_ki aki_serial (_, ski, serial) = (aki_ki = "" || aki_ki = ski) && (aki_serial = "" || aki_serial = serial)
 
-let count_possible_links total _cert_hash issuer_hash (n_certs, n_links) =
+let write_possible_links ops cert_hash (issuer_hash, aki_ki, aki_serial) =
+  let possible_issuers = Hashtbl.find_all cert_hash_by_subject_hash issuer_hash in
+  let write_possible_issuer (i, _, _) = ops.write_line "possible_links" "" [cert_hash; i] in
+  List.iter write_possible_issuer (List.filter (filter_fun aki_ki aki_serial) possible_issuers)
+
+let count_possible_links total _cert_hash (issuer_hash, aki_ki, aki_serial) (n_certs, n_links) =
   let possible_issuers = Hashtbl.find_all cert_hash_by_subject_hash issuer_hash in
   let new_n_certs = n_certs + 1
-  and new_n_links = n_links + (List.length possible_issuers) in
+  and new_n_links = n_links + (List.length (List.filter (filter_fun aki_ki aki_serial) possible_issuers)) in
   if (new_n_certs mod 1000) = 0 then begin
     let average_links = float new_n_links /. float new_n_certs in
     let estimated_links = float total *. average_links in
