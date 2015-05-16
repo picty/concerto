@@ -19,14 +19,6 @@ let options = [
 let issuer_hash_by_cert_hash = Hashtbl.create 1000
 let cert_hash_by_subject_hash = Hashtbl.create 1000
 
-let unquote s =
-  let s_len = String.length s in
-  if s_len < 2 then failwith "unquote: invalid quoted string";
-  if s.[0] <> '"' || s.[s_len - 1] <> '"' then failwith "unquote: string is not quoted";
-  let result = String.sub s 1 (s_len - 2) in
-  try ignore (String.index result '"'); failwith "unquote: too many quotes!"
-  with Not_found -> result
-
 let is_ca version isCA = isCA = "1" || (version = "1" && !accept_v1_ca)
 
 let add_line l =

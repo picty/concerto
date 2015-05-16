@@ -144,3 +144,12 @@ let prepare_csv_output_dir output_dir =
     close_all_files; }
 
 
+
+let unquote s =
+  let s_len = String.length s in
+  if s_len < 2 then failwith "unquote: invalid quoted string";
+  if s.[0] <> '"' || s.[s_len - 1] <> '"' then failwith "unquote: string is not quoted";
+  let result = String.sub s 1 (s_len - 2) in
+  try ignore (String.index result '"'); failwith "unquote: too many quotes!"
+  with Not_found -> result
+
