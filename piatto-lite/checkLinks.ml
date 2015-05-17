@@ -39,7 +39,9 @@ let _ =
   try
     let out_ops = prepare_csv_output_dir !output_dir
     and in_ops = prepare_csv_output_dir !input_dir in
-    List.iter (read_csv in_ops out_ops) csv_files
+    List.iter (read_csv in_ops out_ops) csv_files;
+    in_ops.close_all_files ();
+    out_ops.close_all_files ()
   with
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
     | e -> prerr_endline (Printexc.to_string e); exit 1
