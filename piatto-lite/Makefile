@@ -1,7 +1,7 @@
 # configurable section
 TARGETS = piatto parseCerts prepareLinks checkLinks \
 	writeLine dumpFile readFile listFiles mergeRawFiles \
-	removeIsolatedCerts
+	removeIsolatedCerts computeComponents
 
 piatto_SRCS := fileOps.ml piatto.ml
 parseCerts_SRCS := fileOps.ml parseCerts.ml
@@ -13,6 +13,7 @@ readFile_SRCS := fileOps.ml readFile.ml
 listFiles_SRCS := fileOps.ml listFiles.ml
 mergeRawFiles_SRCS := fileOps.ml mergeRawFiles.ml
 removeIsolatedCerts_SRCS := fileOps.ml removeIsolatedCerts.ml
+computeComponents_SRCS := fileOps.ml computeComponents.ml
 
 # comment this line if not using camlp4
 USE_CAMLP4 = yes

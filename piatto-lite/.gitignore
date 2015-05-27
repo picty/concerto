@@ -9,3 +9,4 @@ readFile
 listFiles
 mergeRawFiles
 removeIsolatedCerts
+computeComponents
