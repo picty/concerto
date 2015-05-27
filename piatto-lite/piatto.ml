@@ -40,7 +40,7 @@ let rec handle_one_file ops input =
     let answer_type, version, ciphersuite, alert_level, alert_type = match parsed_answer.pa_content with
       | Empty -> "0", "", "", "", ""
       | Junk _ -> "1", "", "", "", ""
-      | SSLv2Handshake (v, [], _) -> string_of_int (int_of_tls_version v), "", "", "", ""
+      | SSLv2Handshake (v, [], _) -> "20", string_of_int (int_of_tls_version v), "", "", ""
 
       | SSLv2Alert e ->
          "10", "2", "", "2", string_of_int (int_of_ssl2_error e)
