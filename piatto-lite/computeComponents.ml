@@ -77,12 +77,11 @@ let _ =
   try
     let out_ops = prepare_csv_output_dir !output_dir in
     List.iter read_csv csv_files;
+    print_string "N_components: ";
     print_int (Hashtbl.length component_by_id);
     print_newline ();
-    print_newline ();
-    print_newline ();
     let print_cert h _ = print_endline h in
-    let print_component _ c = Hashtbl.iter print_cert c; print_newline () in
+    let print_component _ c = print_int (Hashtbl.length c); print_newline (); Hashtbl.iter print_cert c; print_newline () in
     Hashtbl.iter print_component component_by_id;
     out_ops.close_all_files ()
   with
