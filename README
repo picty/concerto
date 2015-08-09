@@ -30,3 +30,9 @@ sort -u 0[45]*/?/*.piatto/chains.csv > chains.csv
 parseCerts -o parsed-certs -i common -t certs 00 01
 
 prepareLinks ...
+
+checkLinks
+
+buildChains
+
+gradeChains?

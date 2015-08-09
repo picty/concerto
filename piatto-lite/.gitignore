@@ -10,3 +10,4 @@ listFiles
 mergeRawFiles
 removeIsolatedCerts
 computeComponents
+buildChains
