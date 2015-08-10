@@ -4,14 +4,12 @@ open FileOps
 open X509Util
 
 let verbose = ref false
-let links_file = ref ""
-let output_dir = ref ""
+let data_dir = ref ""
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'l') "links" (StringVal links_file) "set the links file";
-  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory (built-chains)";
+  mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
 ]
 
 
@@ -21,23 +19,14 @@ let options = [
 (*   let tmp_input = input_of_string s s in *)
 (*   PTypes.hexparse tmp_input *)
 
-let read_links () =
+let read_links ops =
   let links = Hashtbl.create 1000 in
-  let f = open_in !links_file in
-  let rec handle_line f =
-    let line = try Some (input_line f) with End_of_file -> None in
-    match line with
-    | None -> close_in f; links
-    | Some l ->
-      match List.map unquote (string_split ':' l) with
-      | [subject_h; issuer_h] ->
-	 Hashtbl.add links subject_h issuer_h;
-         handle_line f
-      | _ -> failwith ("Invalid line (" ^ (quote_string l) ^ ")")
+  let read_links_aux = function
+    | [subject_h; issuer_h] -> Hashtbl.add links subject_h issuer_h;
+    | _ -> raise (InvalidNumberOfFields 2)
   in
-  handle_line f
-
-
+  ops.iter_lines "links" read_links_aux;
+  links
 
 
 
@@ -113,9 +102,7 @@ let build_certchain max_transvalid links certs_hash =
 
 
 
-let handle_chains_file links ops csvfile =
-  let f = open_in csvfile in
-
+let handle_chains_file links ops =
   let handle_current_chain = function
     | None -> ()
     | Some (chain_h, unordered_certs_h) ->
@@ -142,45 +129,33 @@ let handle_chains_file links ops csvfile =
        List.iteri write_built_chain built_chains
   in
 
-  let rec handle_line current_chain f =
-    let line = try Some (input_line f) with End_of_file -> None in
-    match line with
-    | None ->
-       handle_current_chain current_chain;
-       close_in f
-    | Some l ->
-      match List.map unquote (string_split ':' l), current_chain with
-      | [chain_h; n_str; cert_h], None ->
-	let n = int_of_string n_str in
-	let new_chain = Some (chain_h, [n, cert_h]) in
-        handle_line new_chain f
-      | [chain_h; n_str; cert_h], Some (prev_chain_h, prev_certs) ->
-	let n = int_of_string n_str in
-	if chain_h <> prev_chain_h then begin
+  let handle_one_line current_chain l = match l, current_chain with
+    | [chain_h; n_str; cert_h], None ->
+       let n = int_of_string n_str in
+       Some (chain_h, [n, cert_h])
+    | [chain_h; n_str; cert_h], Some (prev_chain_h, prev_certs) ->
+       let n = int_of_string n_str in
+       if chain_h <> prev_chain_h then begin
           handle_current_chain current_chain;
-	  let new_chain = Some (chain_h, [n, cert_h]) in
-          handle_line new_chain f
-        end else begin
-	  let new_chain = Some (chain_h, (n, cert_h)::prev_certs) in
-          handle_line new_chain f
-        end
-      | _ -> failwith ("Invalid line (" ^ (quote_string l) ^ ")")
+	  Some (chain_h, [n, cert_h])
+        end else Some (chain_h, (n, cert_h)::prev_certs)
+    | _ -> raise (InvalidNumberOfFields 3)
   in
-  handle_line None f
-
-
+  let last_chain = ops.iter_lines_accu "chains" handle_one_line None in
+  handle_current_chain last_chain
 
 
 
 
 let _ =
-  let csv_files = parse_args ~progname:"buildChains" options Sys.argv in
+  (* TODO: Check that this _ is [] *)
+  let _ = parse_args ~progname:"buildChains" options Sys.argv in
   try
-    let out_ops = prepare_data_dir !output_dir
-    and links = read_links () in
+    let ops = prepare_data_dir !data_dir in
+    let links = read_links ops in
     if !verbose then print_endline "Links loaded.";
-    List.iter (handle_chains_file links out_ops) csv_files;
-    out_ops.close_all_files ()
+    handle_chains_file links ops;
+    ops.close_all_files ()
   with
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
     | e -> prerr_endline (Printexc.to_string e); exit 1
