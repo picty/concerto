@@ -43,12 +43,12 @@ let read_links () =
 
 let build_certchain max_transvalid links certs_hash =
 
-  let rec bottom_up n_ordered n_transvalid last chain next_certs =
-    let possible_issuers = Hashtbl.find_all links last in
+  let rec bottom_up n_ordered n_transvalid ((_, last_hash) as last) chain (next_certs : (int * string) list) =
+    let possible_issuers = Hashtbl.find_all links last_hash in
 
     (* First, we check wether we have hit a self-signed cert *)
-    if List.mem last possible_issuers
-    then [ last::chain, next_certs, true, n_ordered ]
+    if List.mem last_hash possible_issuers
+    then [ last::chain, next_certs, true, n_ordered, n_transvalid ]
 
     else begin
       (* Else, we need to find candidates for the next link, starting with
@@ -57,25 +57,29 @@ let build_certchain max_transvalid links certs_hash =
 
       let rec prepare_inmsg_candidates n_ordered previous_certs accu = function
 	| [] -> accu
-	| c::cs ->
+	| ((c_pos, c_hash) as c)::cs ->
 	   let new_previous_certs = (c::previous_certs) in
-	   if (List.mem c possible_issuers) &&
-             not (List.mem c (last::chain)) &&
-	       not (List.mem c previous_certs)
+	   if (List.mem c_hash possible_issuers) &&
+             not (List.mem c_hash (List.map snd (last::chain))) &&
+	       not (List.mem c_hash (List.map snd previous_certs))
 	   then begin
-	    let new_accu = (n_ordered + 1, n_transvalid, c, List.rev_append previous_certs cs)::accu in
-	    prepare_inmsg_candidates n_ordered new_previous_certs new_accu cs
+             let new_n_ordered =
+               if n_ordered - 1 = (List.length chain) && c_pos = n_ordered
+               then  n_ordered + 1
+               else n_ordered
+             in
+             let new_accu = (new_n_ordered, n_transvalid, (Some c_pos, c_hash), List.rev_append previous_certs cs)::accu in
+	     prepare_inmsg_candidates n_ordered new_previous_certs new_accu cs
 	  end else prepare_inmsg_candidates n_ordered new_previous_certs accu cs
       in
-
       let rec prepare_external_cas n_ordered rem_certs accu = function
 	| [] -> accu
 	| ca::cas ->
 	  let new_accu =
-	    if not (List.mem ca (List.map (fun (_, _, c, _) -> c) accu)) &&
-              not (List.mem ca (last::chain))
+	    if not (List.mem ca (List.map (fun (_, _, (_, c), _) -> c) accu)) &&
+              not (List.mem ca (List.map snd (last::chain)))
               (* && not (List.mem (cert_id_of_sc sc) (List.map cert_id_of_sc (last::chain))) *)
-	    then (n_ordered, n_transvalid + 1, ca, rem_certs)::accu
+	    then (n_ordered, n_transvalid + 1, (None, ca), rem_certs)::accu
 	    else accu
 	  in prepare_external_cas n_ordered rem_certs new_accu cas
       in
@@ -93,7 +97,7 @@ let build_certchain max_transvalid links certs_hash =
 
       match candidates with
       (* If no acceptable issuer has been found, this branch is an incomplete chain *)
-      | [] -> [ last::chain, next_certs, false, n_ordered ]
+      | [] -> [ last::chain, next_certs, false, n_ordered, n_transvalid ]
       | _ ->
          let handle_candidate (n_ordered2, n_transvalid2, n, rems) =
            bottom_up n_ordered2 n_transvalid2 n (last::chain) rems
@@ -101,8 +105,9 @@ let build_certchain max_transvalid links certs_hash =
          List.flatten (List.map handle_candidate candidates)
     end
   in
-  match certs_hash with
-  | c::cs -> bottom_up 1 0 c [] cs
+  match List.mapi (fun i c -> (i, c)) certs_hash with
+  | (0, c)::cs -> bottom_up 1 0 (Some 0, c) [] cs
+  | (_, _)::_ -> failwith "Internal error"
   | [] -> []
 
 
@@ -121,17 +126,18 @@ let handle_chains_file links ops csvfile =
          else failwith ("Unexpected line in chains.csv concerning chain \"" ^ (quote_string chain_h) ^ "\"")
        in
        let certs_h = List.mapi check_i ordered_certs_h in
-       let built_chains = build_certchain (Some 5) links (List.rev certs_h) in
-       let write_built_chain i (certs_hash, unused_certs, complete, n_ordered) =
+       let built_chains = build_certchain (Some 5) links certs_h in
+       let write_built_chain i (certs_hash, unused_certs, complete, n_ordered, n_transvalid) =
          ops.write_line "built_chains" "" [
            chain_h;
            string_of_int i;
            string_of_int (List.length certs_hash);
            if complete then "1" else "0";
-           string_of_int n_ordered
+           string_of_int n_ordered;
+           string_of_int n_transvalid;
          ];
-         List.iteri (fun pos cert_hash -> ops.write_line "built_links" "" [chain_h; string_of_int i; string_of_int pos; cert_hash]) (List.rev certs_hash);
-         List.iter (fun cert_hash -> ops.write_line "unused_certs" "" [chain_h; string_of_int i; cert_hash]) unused_certs
+         List.iteri (fun pos_in_chain (pos_in_msg, cert_hash) -> ops.write_line "built_links" "" [chain_h; string_of_int i; string_of_int pos_in_chain; (match pos_in_msg with None -> "-" | Some i -> string_of_int i); cert_hash]) (List.rev certs_hash);
+         List.iter (fun (pos_in_msg, cert_hash) -> ops.write_line "unused_certs" "" [chain_h; string_of_int i; string_of_int pos_in_msg; cert_hash]) unused_certs
        in
        List.iteri write_built_chain built_chains
   in
