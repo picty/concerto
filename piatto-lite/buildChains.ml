@@ -1,3 +1,18 @@
+(* build-chains.csv
+
+   Inputs:
+    - links.csv
+    - chains.csv
+
+   Parameter:
+    - max-transvalid certs
+
+   Outputs:
+    - built_chains.csv
+    - built_links.csv
+    - unused_certs.csv
+ *)
+
 open Parsifal
 open Getopt
 open FileOps
