@@ -86,7 +86,7 @@ let rec handle_one_file ops input =
 let _ =
   let dump_files = parse_args ~progname:"piatto" options Sys.argv in
   try
-    let ops = prepare_csv_output_dir !output_dir in
+    let ops = prepare_data_dir !output_dir in
     let open_files = function
       | [] -> input_of_channel ~verbose:(!verbose) "(stdin)" Lwt_io.stdin >>= fun x -> return [x]
       | _ -> Lwt_list.map_s input_of_filename dump_files

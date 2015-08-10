@@ -104,8 +104,8 @@ let handle_one_prefix out_ops in_ops file_type prefix =
 let _ =
   let prefixes = parse_args ~progname:"parse-certs" options Sys.argv in
   try
-    let output_ops = prepare_csv_output_dir !output_dir
-    and input_ops = prepare_csv_output_dir !input_dir in
+    let output_ops = prepare_data_dir !output_dir
+    and input_ops = prepare_data_dir !input_dir in
     List.iter (handle_one_prefix output_ops input_ops !file_type) prefixes;
     output_ops.close_all_files ();
     input_ops.close_all_files ()

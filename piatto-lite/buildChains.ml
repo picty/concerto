@@ -176,7 +176,7 @@ let handle_chains_file links ops csvfile =
 let _ =
   let csv_files = parse_args ~progname:"buildChains" options Sys.argv in
   try
-    let out_ops = prepare_csv_output_dir !output_dir
+    let out_ops = prepare_data_dir !output_dir
     and links = read_links () in
     if !verbose then print_endline "Links loaded.";
     List.iter (handle_chains_file links out_ops) csv_files;

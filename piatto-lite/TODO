@@ -1,3 +1,15 @@
+- Add some features to fileOps (see TODO inside)
+- Move piatto-lite at the root in a new branch
+- Rewrite all tools to use the same directory for ins and outs
+- Write a clean merge
+- Add inject-db.sh
+- Rewrite piccolo
+- Add options for parseCerts (-out-prefix) and for merge (-in-prefix) to allow parallel tools on the same directory
+- Find a way to annotate stuff (trust info on certs and chains and IPs) => the SQL db ?
+
+
+
+
 = Add an index to raw/ =
 
 The idea would be that opening raw, the code would open raw/certs.index with namelen/name/offset/len for each cert and update it at the end.

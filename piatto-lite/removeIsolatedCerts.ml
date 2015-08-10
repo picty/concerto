@@ -53,7 +53,7 @@ let read_csv out_ops csvname =
 let _ =
   let csv_files = parse_args ~progname:"checkLinks" options Sys.argv in
   try
-    let out_ops = prepare_csv_output_dir !output_dir in
+    let out_ops = prepare_data_dir !output_dir in
     List.iter (read_csv out_ops) csv_files;
     let write_isolated_certs h _ = out_ops.write_line "isolated-links" "" [h; h] in
     Hashtbl.iter write_isolated_certs potentially_isolated;

@@ -1,9 +1,25 @@
 open Parsifal
 
-type file_write_ops = {
+
+
+(* TODO
+ - Rewrite a correct version of list (it might be in two parts: list-prefixes and list-prefix
+ - Add support for rwlocks in file openings
+ - Enforce R ^ W on bin files ?
+ - Add an option to check whether a file exists before destroying it or appending it
+   (sometimes we need to start from scratch, but might want to warn the user before
+   truncating the file)
+ - Add an option to check for unique keys, even when reopening a file ?
+*)
+type file_ops = {
+  (* Read operations for CSV file *)
+  iter_lines : string -> (string list -> unit) -> unit;
+
+  (* Write operations for CSV file *)
   check_key_freshness : string -> string -> bool;
   write_line : string -> string -> string list -> unit;
 
+  (* Read/Write operations for binary files *)
   read_file : string -> string -> string;
   dump_file : string -> string -> string -> unit;
   list_files : string -> string -> (string * int * int) list;
@@ -11,15 +27,27 @@ type file_write_ops = {
   close_all_files : unit -> unit;
 }
 
+
 let try_mkdir dirname mode =
   try Unix.mkdir dirname mode
   with _ -> ()
 
-let prepare_csv_output_dir output_dir =
-  try_mkdir output_dir 0o755;
-  try_mkdir (output_dir ^ "/raw") 0o755;
+(* TODO: Write a proper unquote... This one is safe but restricted. *)
+let unquote s =
+  let s_len = String.length s in
+  if s_len < 2 then failwith "unquote: invalid quoted string";
+  if s.[0] <> '"' || s.[s_len - 1] <> '"' then failwith "unquote: string is not quoted";
+  let result = String.sub s 1 (s_len - 2) in
+  try ignore (String.index result '"'); failwith "unquote: too many quotes!"
+  with Not_found -> result
 
-  (* CSV operations *)
+
+
+let prepare_data_dir data_dir =
+  try_mkdir data_dir 0o755;
+  try_mkdir (data_dir ^ "/raw") 0o755;
+
+  (* CSV helpers *)
 
   let open_wfiles = Hashtbl.create 10 in
 
@@ -29,7 +57,7 @@ let prepare_csv_output_dir output_dir =
     with
       Not_found ->
         (* TODO: Here we do not guarantee anymore the absence of dupes, as soon as we append! *)
-	let f = open_out_gen [Open_wronly; Open_append; Open_creat] 0o644 (output_dir ^ "/" ^ csv_name ^ ".csv") in
+	let f = open_out_gen [Open_wronly; Open_append; Open_creat] 0o644 (data_dir ^ "/" ^ csv_name ^ ".csv") in
 	let keys = Hashtbl.create 100 in
 	Hashtbl.replace open_wfiles csv_name (f, keys);
 	f, keys
@@ -69,9 +97,9 @@ let prepare_csv_output_dir output_dir =
       Hashtbl.find open_binfiles (filetype, prefix)
     with
       Not_found ->
-        try_mkdir (output_dir ^ "/raw/" ^ filetype) 0o755;
+        try_mkdir (data_dir ^ "/raw/" ^ filetype) 0o755;
         let wrfd = Unix.openfile
-          (output_dir ^ "/raw/" ^ filetype ^ "/" ^ prefix ^ ".pack")
+          (data_dir ^ "/raw/" ^ filetype ^ "/" ^ prefix ^ ".pack")
           [Unix.O_RDWR; Unix.O_CREAT] 0o644
         in
 	let keys = Hashtbl.create 100 in
@@ -87,9 +115,25 @@ let prepare_csv_output_dir output_dir =
   in
 
 
-  (* Real operations *)
-  
-  let check_key_freshness csv_name key =
+  (* CSV operations *)
+
+  let iter_lines csv_name line_handler =
+    let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
+    let rec handle_line f =
+      let line = try Some (input_line f) with End_of_file -> None in
+      match line with
+      | None -> close_in f
+      | Some l ->
+         try
+           line_handler (List.map unquote (string_split ':' l));
+           handle_line f
+         with e ->
+           close_in f;
+           raise e
+    in
+    handle_line f
+
+  and check_key_freshness csv_name key =
     let _, keys = open_wfile csv_name in
     not (Hashtbl.mem keys key)
   and write_line csv_name key line =
@@ -139,17 +183,7 @@ let prepare_csv_output_dir output_dir =
     Hashtbl.clear open_binfiles
 
   in
-  { check_key_freshness; write_line;
+  { iter_lines;
+    check_key_freshness; write_line;
     read_file; dump_file; list_files;
     close_all_files; }
-
-
-
-let unquote s =
-  let s_len = String.length s in
-  if s_len < 2 then failwith "unquote: invalid quoted string";
-  if s.[0] <> '"' || s.[s_len - 1] <> '"' then failwith "unquote: string is not quoted";
-  let result = String.sub s 1 (s_len - 2) in
-  try ignore (String.index result '"'); failwith "unquote: too many quotes!"
-  with Not_found -> result
-

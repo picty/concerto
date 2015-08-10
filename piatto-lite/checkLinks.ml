@@ -37,8 +37,8 @@ let read_csv in_ops out_ops csvname =
 let _ =
   let csv_files = parse_args ~progname:"checkLinks" options Sys.argv in
   try
-    let out_ops = prepare_csv_output_dir !output_dir
-    and in_ops = prepare_csv_output_dir !input_dir in
+    let out_ops = prepare_data_dir !output_dir
+    and in_ops = prepare_data_dir !input_dir in
     List.iter (read_csv in_ops out_ops) csv_files;
     in_ops.close_all_files ();
     out_ops.close_all_files ()

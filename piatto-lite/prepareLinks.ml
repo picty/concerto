@@ -64,7 +64,7 @@ let _ =
   try
     List.iter read_csv csv_files;
     if not !rundry then begin
-      let ops = prepare_csv_output_dir !output_dir in
+      let ops = prepare_data_dir !output_dir in
       Hashtbl.iter (write_possible_links ops) issuer_hash_by_cert_hash;
       ops.close_all_files ()
     end else begin
