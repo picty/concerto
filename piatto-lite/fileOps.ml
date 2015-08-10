@@ -14,6 +14,7 @@ open Parsifal
 type file_ops = {
   (* Read operations for CSV file *)
   iter_lines : string -> (string list -> unit) -> unit;
+  iter_lines_accu : 'a. string -> ('a -> string list -> 'a) -> 'a -> 'a;
 
   (* Write operations for CSV file *)
   check_key_freshness : string -> string -> bool;
@@ -42,6 +43,8 @@ let unquote s =
   with Not_found -> result
 
 
+
+exception InvalidNumberOfFields of int
 
 let prepare_data_dir data_dir =
   try_mkdir data_dir 0o755;
@@ -117,6 +120,7 @@ let prepare_data_dir data_dir =
 
   (* CSV operations *)
 
+  (* TODO: Factor the two following functions? *)
   let iter_lines csv_name line_handler =
     let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
     let rec handle_line f =
@@ -127,11 +131,35 @@ let prepare_data_dir data_dir =
          try
            line_handler (List.map unquote (string_split ':' l));
            handle_line f
-         with e ->
-           close_in f;
-           raise e
+         with
+         | InvalidNumberOfFields n ->
+            close_in f;
+            failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (quote_string l))
+         | e ->
+            close_in f;
+            raise e
     in
     handle_line f
+
+  and iter_lines_accu csv_name line_handler initial_accu =
+    let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
+    let rec handle_line accu f =
+      let line = try Some (input_line f) with End_of_file -> None in
+      match line with
+      | None -> close_in f; accu
+      | Some l ->
+         try
+           let new_accu = line_handler accu (List.map unquote (string_split ':' l)) in
+           handle_line new_accu f
+         with
+         | InvalidNumberOfFields n ->
+            close_in f;
+            failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (quote_string l))
+         | e ->
+            close_in f;
+            raise e
+    in
+    handle_line initial_accu f
 
   and check_key_freshness csv_name key =
     let _, keys = open_wfile csv_name in
@@ -183,7 +211,7 @@ let prepare_data_dir data_dir =
     Hashtbl.clear open_binfiles
 
   in
-  { iter_lines;
+  { iter_lines; iter_lines_accu;
     check_key_freshness; write_line;
     read_file; dump_file; list_files;
     close_all_files; }
