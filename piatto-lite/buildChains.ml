@@ -5,11 +5,16 @@ open X509Util
 
 let verbose = ref false
 let data_dir = ref ""
+let max_transvalid = ref (Some 3)
+let illimited_transvalid () = max_transvalid := None
+let set_max_transvalid i = max_transvalid := Some i; ActionDone
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
+  mkopt None "illimited-transvalid" (TrivialFun illimited_transvalid) "do not restrict the number of external certs";
+  mkopt (Some 'T') "max-transvalid" (IntFun set_max_transvalid) "do not restrict the number of external certs";
 ]
 
 
@@ -113,7 +118,7 @@ let handle_chains_file links ops =
          else failwith ("Unexpected line in chains.csv concerning chain \"" ^ (quote_string chain_h) ^ "\"")
        in
        let certs_h = List.mapi check_i ordered_certs_h in
-       let built_chains = build_certchain (Some 5) links certs_h in
+       let built_chains = build_certchain !max_transvalid links certs_h in
        let write_built_chain i (certs_hash, unused_certs, complete, n_ordered, n_transvalid) =
          ops.write_line "built_chains" "" [
            chain_h;
