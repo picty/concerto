@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <title>{{ title | escape }}</title>
+  </head>
+  <body>
+    <h1>{{ title | escape }}</h1>
+
+    {{ chains | count }} candidates found:
+
+    <table border="1">
+      <th>Campaign</th>
+      <th colspan="2">Location</th>
+      <th>Timestamp</th>
+      <th>Chain</th>
+      <th>C?</th>
+      <th>N_O</th>
+      <th>N_T</th>
+      <th>Subject</th>
+      {%- for chain in chains %}
+      <tr>
+	<td>{{ chain.campaign }}</td>
+        {% if (chain.name | count) > 0 %}
+	<td>{{ chain.name }}</td>
+        {% else %}
+	<td align="center">-</td>
+        {% endif %}
+	<td><a href="{{ '/chains/by-ip/' + chain.ip + '/0' }}">{{ chain.ip }}</a></td>
+        <td>{{ chain.timestamp_str }}</td>
+	<td><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( chain.built_chain_number | string ) }}">Chain</a></td>
+	<td align="center">{% if chain.complete %}Complete{% else %}Incomplete{% endif %}</td>
+	<td align="center">{{ chain.chain_length }}</td>
+	<td align="center">{{ chain.n_ordered }}</td>
+	<td align="center">{{ chain.n_transvalid }}</td>
+        <td align="center">{{ chain.valid_at_timestamp }}</td>
+	<td>{{ chain.subject }}</td>
+      </tr>
+      {%- endfor %}
+    </table>
+  </body>
+</html>
