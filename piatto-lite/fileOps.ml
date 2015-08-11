@@ -10,6 +10,7 @@ open Parsifal
    (sometimes we need to start from scratch, but might want to warn the user before
    truncating the file)
  - Add an option to check for unique keys, even when reopening a file ?
+ - All these options + the possible rewrite tools (input and output files) can be added when creating file_ops
 *)
 type file_ops = {
   (* Read operations for CSV file *)
