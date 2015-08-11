@@ -1,4 +1,4 @@
-(* build-chains.csv
+(* buildChains.ml
 
    Inputs:
     - links.csv

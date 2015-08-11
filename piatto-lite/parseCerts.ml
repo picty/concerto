@@ -112,7 +112,7 @@ let handle_one_prefix ops prefix =
 
 let _ =
   (* TODO: Rewrite this when we have a proper list_all_files operation *)
-  let prefixes = parse_args ~progname:"parse-certs" options Sys.argv in
+  let prefixes = parse_args ~progname:"parseCerts" options Sys.argv in
   try
     let ops = prepare_data_dir !data_dir in
     List.iter (handle_one_prefix ops) prefixes;

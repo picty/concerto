@@ -73,7 +73,7 @@ let read_csv csvname =
 
 
 let _ =
-  let csv_files = parse_args ~progname:"checkLinks" options Sys.argv in
+  let csv_files = parse_args ~progname:"computeComponents" options Sys.argv in
   try
     let out_ops = prepare_data_dir !output_dir in
     List.iter read_csv csv_files;
