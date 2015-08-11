@@ -4,12 +4,11 @@ BIN_DIR="$(dirname "$0")"
 
 DATA_DIR="$1"
 ANSWER_DUMP="$2"
-# TRUSTED_CA="$3"
+shift 2
 
 error () {
       echo "Error: $1" >&2
-#      echo "Usage: maestro OUT_DIR ANSWER_DUMP TRUSTED_CA"
-      echo "Usage: maestro OUT_DIR ANSWER_DUMPTED_CA"
+      echo "Usage: maestro OUT_DIR ANSWER_DUMP TRUSTED_CA"
       exit 1
 }
 
@@ -44,7 +43,19 @@ echo -n "Checking links..."
 handle_ret_code
 
 echo -n "Building chains..."
-"$BIN_DIR/buildChains" -d "$DATA_DIR" extract-cas "$ANSWER_DUMP" 2> /dev/null
+"$BIN_DIR/buildChains" -d "$DATA_DIR" 2> /dev/null
+handle_ret_code
+
+if [ "$*" = "" ]; then
+    touch "$DATA_DIR/trusted_certs.csv" "$DATA_DIR/trusted_chains.csv"
+else
+    echo -n "Flag trusted certs..."
+    "$BIN_DIR/flagTrust" -d "$DATA_DIR" --der "$@" 2> /dev/null
+    handle_ret_code
+fi
+
+echo -n "Rate chains..."
+"$BIN_DIR/rateChains" -d "$DATA_DIR" 2> /dev/null
 handle_ret_code
 
 echo -n "Injecting data into the database..."
