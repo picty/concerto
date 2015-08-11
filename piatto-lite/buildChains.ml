@@ -42,12 +42,29 @@ let options = [
 let read_links ops =
   let links = Hashtbl.create 1000 in
   let read_links_aux = function
-    | [subject_h; issuer_h] -> Hashtbl.add links subject_h issuer_h;
+    | [subject_h; issuer_h] -> Hashtbl.add links subject_h issuer_h
     | _ -> raise (InvalidNumberOfFields 2)
   in
   ops.iter_lines "links" read_links_aux;
   links
 
+let read_certs_validity ops =
+  let certs_validity = Hashtbl.create 1000 in
+  let read_certs_aux = function
+    | [cert_h; _version; _serial; _subject; _issuer; not_before; not_after;
+       _key; _modulus; _exp; _isCA; _ski; _aki_ki; _aki_serial] ->
+       Hashtbl.add certs_validity cert_h (Int64.of_string not_before, Int64.of_string not_after)
+    | _ -> raise (InvalidNumberOfFields 14)
+  in
+  ops.iter_lines "certs" read_certs_aux;
+  certs_validity
+
+let compute_chain_validity certs_validity certs =
+  let constrain_interval (cur_min, cur_max) (_, h) =
+    let nB, nA = Hashtbl.find certs_validity h in
+    max nB cur_min, min nA cur_max
+  in
+  List.fold_left constrain_interval (0L, Int64.max_int) certs
 
 
 let build_certchain max_transvalid links certs_hash =
@@ -122,7 +139,7 @@ let build_certchain max_transvalid links certs_hash =
 
 
 
-let handle_chains_file links ops =
+let handle_chains_file links certs_validity ops =
   let handle_current_chain = function
     | None -> ()
     | Some (chain_h, unordered_certs_h) ->
@@ -135,6 +152,7 @@ let handle_chains_file links ops =
        let certs_h = List.mapi check_i ordered_certs_h in
        let built_chains = build_certchain !max_transvalid links certs_h in
        let write_built_chain i (certs_hash, unused_certs, complete, n_ordered, n_transvalid) =
+         let nB, nA = compute_chain_validity certs_validity certs_hash in
          ops.write_line "built_chains" "" [
            chain_h;
            string_of_int i;
@@ -142,6 +160,8 @@ let handle_chains_file links ops =
            if complete then "1" else "0";
            string_of_int n_ordered;
            string_of_int n_transvalid;
+           Int64.to_string nB;
+           Int64.to_string nA;
          ];
          List.iteri (fun pos_in_chain (pos_in_msg, cert_hash) -> ops.write_line "built_links" "" [chain_h; string_of_int i; string_of_int pos_in_chain; (match pos_in_msg with None -> "-" | Some i -> string_of_int i); cert_hash]) (List.rev certs_hash);
          List.iter (fun (pos_in_msg, cert_hash) -> ops.write_line "unused_certs" "" [chain_h; string_of_int i; string_of_int pos_in_msg; cert_hash]) unused_certs
@@ -172,9 +192,10 @@ let _ =
   let _ = parse_args ~progname:"buildChains" options Sys.argv in
   try
     let ops = prepare_data_dir !data_dir in
-    let links = read_links ops in
+    let links = read_links ops
+    and certs_validity = read_certs_validity ops in
     if !verbose then print_endline "Links loaded.";
-    handle_chains_file links ops;
+    handle_chains_file links certs_validity ops;
     ops.close_all_files ()
   with
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
