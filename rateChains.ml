@@ -29,16 +29,12 @@ let options = [
 
 
 let populate_chains chains = function
-  | [chain_h; n; len_str; complete_str; n_ordered_str; n_transvalid_str; n_unused_str; _; _] ->
-     let len = int_of_string len_str
-     and complete = complete_str = "1"
-     and n_ordered = int_of_string n_ordered_str
+  | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; _; _] ->
+     let complete = complete_str = "1"
+     and ordered = ordered_str = "1"
      and n_transvalid = int_of_string n_transvalid_str
      and n_unused = int_of_string n_unused_str in
-     (* If only the root cert is external, we should not count it as transvalid *)
-     let revised_n_transvalid = if (n_ordered = len - 1) && (n_transvalid = 1) && (n_unused = 0) then 0 else n_transvalid
-     and ordered = n_ordered = len || (n_ordered = len - 1 && n_transvalid = 1) in
-     Hashtbl.replace chains (chain_h, n) (complete, ordered, n_unused, revised_n_transvalid)
+     Hashtbl.replace chains (chain_h, n) (complete, ordered, n_transvalid, n_unused)
   | _ -> raise (InvalidNumberOfFields 9)
 
 let populate_chain_trust trusted_chains = function
@@ -47,7 +43,7 @@ let populate_chain_trust trusted_chains = function
   | _ -> raise (InvalidNumberOfFields 3)
 
 
-let rate_chain ops trusted_chains (chain_h, n) (complete, ordered, n_unused, n_transvalid) =
+let rate_chain ops trusted_chains (chain_h, n) (complete, ordered, n_transvalid, n_unused) =
   let trusted = Hashtbl.mem trusted_chains (chain_h, n) in
   let grade = match complete, trusted, ordered, n_unused, n_transvalid with
     | true,  true,  true,  0, 0 -> "A"

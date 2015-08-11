@@ -13,8 +13,8 @@
       <th>Timestamp</th>
       <th>Chain</th>
       <th>C?</th>
-      <th>N_O</th>
       <th>N_T</th>
+      <th>O?</th>
       <th>Subject</th>
       {%- for chain in chains %}
       <tr>
@@ -29,7 +29,7 @@
 	<td><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( chain.built_chain_number | string ) }}">Chain</a></td>
 	<td align="center">{% if chain.complete %}Complete{% else %}Incomplete{% endif %}</td>
 	<td align="center">{{ chain.chain_length }}</td>
-	<td align="center">{{ chain.n_ordered }}</td>
+	<td align="center">{% if chain.ordered %}Ordered{% else %}-{% endif %}</td>
 	<td align="center">{{ chain.n_transvalid }}</td>
         <td align="center">{{ chain.valid_at_timestamp }}</td>
 	<td>{{ chain.subject }}</td>

@@ -60,7 +60,7 @@ create table built_chains(
        built_chain_number int,
        chain_length int,
        complete int,
-       n_ordered int,
+       ordered int,
        n_transvalid int,
        n_unused int,
        not_before text,

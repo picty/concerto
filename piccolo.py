@@ -182,7 +182,7 @@ def cert_by_exact_https_name_bis(type, name):
 def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
     fields = ["built_chains.chain_hash as chain_hash", "dns.name as subject",
               "built_chains.built_chain_number as built_chain_number",
-              "chain_length", "complete", "n_ordered", "n_transvalid",
+              "chain_length", "complete", "ordered", "n_transvalid",
               "built_chains.not_before as not_before", "built_chains.not_after as not_after"]
     tables = ["built_chains"]
     joins = ["built_links on built_links.chain_hash = built_chains.chain_hash " +
@@ -196,7 +196,7 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
         if len(rv) == 1:
             chain = rv[0]
 
-            for s in ["complete"]:
+            for s in ["complete", "ordered"]:
                 chain[s + "_str"] = str (int(chain[s]) == 1)
             chain["not_before_str"] = time_str (int(chain["not_before"]))
             chain["not_after_str"] = time_str (int(chain["not_after"]))
@@ -247,7 +247,7 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
                       "answers.chain_hash as chain_hash", "answers.timestamp as timestamp", "dns.name as subject",
                       "built_chains.built_chain_number as built_chain_number",
                       "built_chains.not_before as not_before", "built_chains.not_after as not_after",
-                      "chain_length", "complete", "n_ordered", "n_transvalid"]
+                      "chain_length", "complete", "ordered", "n_transvalid"]
             tables = ["answers"]
             joins = ["built_chains on built_chains.chain_hash = answers.chain_hash",
                      "built_links on built_links.chain_hash = built_chains.chain_hash " +

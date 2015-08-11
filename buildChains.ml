@@ -74,7 +74,7 @@ let build_certchain max_transvalid links certs_hash =
 
     (* First, we check wether we have hit a self-signed cert *)
     if List.mem last_hash possible_issuers
-    then [ last::chain, next_certs, true, n_ordered, n_transvalid ]
+    then [ last::chain, next_certs, true, n_ordered ]
 
     else begin
       (* Else, we need to find candidates for the next link, starting with
@@ -123,7 +123,7 @@ let build_certchain max_transvalid links certs_hash =
 
       match candidates with
       (* If no acceptable issuer has been found, this branch is an incomplete chain *)
-      | [] -> [ last::chain, next_certs, false, n_ordered, n_transvalid ]
+      | [] -> [ last::chain, next_certs, false, n_ordered ]
       | _ ->
          let handle_candidate (n_ordered2, n_transvalid2, n, rems) =
            bottom_up n_ordered2 n_transvalid2 n (last::chain) rems
@@ -138,6 +138,14 @@ let build_certchain max_transvalid links certs_hash =
 
 
 
+let compute_n_transvalid = function
+  | [] | [_] -> 0
+  | _::beheaded_chain -> List.length (List.filter (fun (p, _) -> p = None) beheaded_chain)
+
+let is_root_transvalid = function
+  | [] -> false
+  | (None, _)::_ -> true
+  | _ -> false
 
 let handle_chains_file links certs_validity ops =
   let handle_current_chain = function
@@ -151,15 +159,19 @@ let handle_chains_file links certs_validity ops =
        in
        let certs_h = List.mapi check_i ordered_certs_h in
        let built_chains = build_certchain !max_transvalid links certs_h in
-       let write_built_chain i (certs_hash, unused_certs, complete, n_ordered, n_transvalid) =
-         let nB, nA = compute_chain_validity certs_validity certs_hash in
+       let write_built_chain i (certs_hash, unused_certs, complete, n_ordered) =
+         let nB, nA = compute_chain_validity certs_validity certs_hash
+         and len = List.length certs_hash in
+         let ordered = n_ordered = len ||
+                         (n_ordered = len - 1 && (is_root_transvalid certs_hash))
+         in
          ops.write_line "built_chains" "" [
            chain_h;
            string_of_int i;
-           string_of_int (List.length certs_hash);
+           string_of_int len;
            if complete then "1" else "0";
-           string_of_int n_ordered;
-           string_of_int n_transvalid;
+           if ordered then "1" else "0";
+           string_of_int (compute_n_transvalid certs_hash);
            string_of_int (List.length unused_certs);
            Int64.to_string nB;
            Int64.to_string nA;
