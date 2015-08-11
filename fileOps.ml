@@ -4,7 +4,6 @@ open Parsifal
 
 (* TODO
  - Rewrite a correct version of list (it might be in two parts: list-prefixes and list-prefix
- - Add support for rwlocks in file openings
  - Enforce R ^ W on bin files ?
  - Add an option to check whether a file exists before destroying it or appending it
    (sometimes we need to start from scratch, but might want to warn the user before
@@ -61,10 +60,11 @@ let prepare_data_dir data_dir =
     with
       Not_found ->
         (* TODO: Here we do not guarantee anymore the absence of dupes, as soon as we append! *)
-	let f = open_out_gen [Open_wronly; Open_append; Open_creat] 0o644 (data_dir ^ "/" ^ csv_name ^ ".csv") in
-	let keys = Hashtbl.create 100 in
-	Hashtbl.replace open_wfiles csv_name (f, keys);
-	f, keys
+        let f = open_out_gen [Open_wronly; Open_append; Open_creat] 0o644 (data_dir ^ "/" ^ csv_name ^ ".csv") in
+        Unix.lockf (Unix.descr_of_out_channel f) Unix.F_LOCK 0;
+        let keys = Hashtbl.create 100 in
+        Hashtbl.replace open_wfiles csv_name (f, keys);
+        f, keys
   in
 
 
@@ -106,6 +106,7 @@ let prepare_data_dir data_dir =
           (data_dir ^ "/raw/" ^ filetype ^ "/" ^ prefix ^ ".pack")
           [Unix.O_RDWR; Unix.O_CREAT] 0o644
         in
+        Unix.lockf wrfd Unix.F_LOCK 0;
 	let keys = Hashtbl.create 100 in
 
         let rdfd = Unix.dup wrfd in
@@ -124,6 +125,7 @@ let prepare_data_dir data_dir =
   (* TODO: Factor the two following functions? *)
   let iter_lines csv_name line_handler =
     let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
+    Unix.lockf (Unix.descr_of_in_channel f) Unix.F_RLOCK 0;
     let rec handle_line f =
       let line = try Some (input_line f) with End_of_file -> None in
       match line with
@@ -144,6 +146,7 @@ let prepare_data_dir data_dir =
 
   and iter_lines_accu csv_name line_handler initial_accu =
     let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
+    Unix.lockf (Unix.descr_of_in_channel f) Unix.F_RLOCK 0;
     let rec handle_line accu f =
       let line = try Some (input_line f) with End_of_file -> None in
       match line with
