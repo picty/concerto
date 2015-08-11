@@ -4,6 +4,7 @@
 *.cmo
 *.cmx
 build
+attic
 injectAnswerDump
 parseCerts
 prepareLinks

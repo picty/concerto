@@ -1,12 +1,10 @@
 = TODO in concerto-ng =
  - Sort this TODO!
  - Add some features to fileOps (see TODO inside)
- - Write a clean merge
- - Add inject-db.sh
  - Rewrite piccolo
+ - Write a clean merge to help parallel executions
  - Add options for parseCerts (-out-prefix) and for merge (-in-prefix) to allow parallel tools on the same directory
- - Find a way to annotate stuff (trust info on certs and chains and IPs) => the SQL db ?
-
+ - Optimize storage (internally use binary hashes, binary representation instead of csv?, SQL types and indexes?)
 
 = Add an index to raw/ =
 
@@ -58,6 +56,7 @@ DB injection
  - Allow for DB reuse (with different campaign ids)
  - New tool to check DB internal consistency (should be replaced by real constraints?)
  - Allow for different back-ends (sqlite, pgsql)
+ - Add internal consistency checks (n_transvalid is duplicated for example)
 
 Analysis -> DB injection
  - Add support for revocation
