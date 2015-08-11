@@ -160,6 +160,7 @@ let handle_chains_file links certs_validity ops =
            if complete then "1" else "0";
            string_of_int n_ordered;
            string_of_int n_transvalid;
+           string_of_int (List.length unused_certs);
            Int64.to_string nB;
            Int64.to_string nA;
          ];
