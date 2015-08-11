@@ -8,9 +8,6 @@
  - Find a way to annotate stuff (trust info on certs and chains and IPs) => the SQL db ?
 
  - Write gradeChains
- - Write tools to handle trust
-   * annotate-trust cert
-   * propagate-trust (certs/chains)
 
 
 = Add an index to raw/ =

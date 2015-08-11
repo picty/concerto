@@ -1,7 +1,8 @@
 # configurable section
 TARGETS = injectAnswerDump parseCerts prepareLinks checkLinks \
 	writeLine dumpFile readFile listFiles mergeRawFiles \
-	removeIsolatedCerts computeComponents buildChains
+	removeIsolatedCerts computeComponents buildChains \
+	flagTrust
 
 injectAnswerDump_SRCS := fileOps.ml injectAnswerDump.ml
 parseCerts_SRCS := fileOps.ml parseCerts.ml
@@ -15,6 +16,7 @@ mergeRawFiles_SRCS := fileOps.ml mergeRawFiles.ml
 removeIsolatedCerts_SRCS := fileOps.ml removeIsolatedCerts.ml
 computeComponents_SRCS := fileOps.ml computeComponents.ml
 buildChains_SRCS := fileOps.ml buildChains.ml
+flagTrust_SRCS := fileOps.ml flagTrust.ml
 
 # comment this line if not using camlp4
 USE_CAMLP4 = yes

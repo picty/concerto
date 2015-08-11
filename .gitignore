@@ -16,3 +16,4 @@ mergeRawFiles
 removeIsolatedCerts
 computeComponents
 buildChains
+flagTrust
