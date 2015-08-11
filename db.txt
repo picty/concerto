@@ -86,6 +86,27 @@ create table unused_certs(
 );
 
 
+create table trusted_certs(
+       cert_hash text,
+       trust_flag text,
+       primary key (cert_hash, trust_flag)
+);
+
+create table trusted_chains(
+       chain_hash text,
+       built_chain_number int,
+       trust_flag text,
+       primary key (chain_hash, built_chain_number, trust_flag)
+);
+
+
+create table rated_chains(
+       chain_hash text,
+       built_chain_number int,
+       grade text,
+       primary key (chain_hash, built_chain_number)
+);
+
 
 .mode list
 .separator :
@@ -94,11 +115,13 @@ create table unused_certs(
 .import certs.csv certs
 .import dns.csv dns
 .import names.csv names
+.import links.csv links
 .import built_chains.csv built_chains
 .import built_links.csv built_links
 .import unused_certs.csv unused_certs
-.import links.csv links
-
+.import trusted_certs.csv trusted_certs
+.import trusted_chains.csv trusted_chains
+.import rated_chains.csv rated_chains
 
 
 

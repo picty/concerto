@@ -7,8 +7,6 @@
  - Add options for parseCerts (-out-prefix) and for merge (-in-prefix) to allow parallel tools on the same directory
  - Find a way to annotate stuff (trust info on certs and chains and IPs) => the SQL db ?
 
- - Write gradeChains
-
 
 = Add an index to raw/ =
 
