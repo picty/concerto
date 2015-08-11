@@ -45,6 +45,7 @@ let populate_certs_table ops sc =
         | RSA rsa_key ->
 	  "RSA", hexdump rsa_key.Pkcs1.p_modulus,
 	  hexdump rsa_key.Pkcs1.p_publicExponent
+        | EC _ -> "ECDSA", "", ""
         | UnparsedPublicKey _ -> "Unknown", "", ""
       in
 

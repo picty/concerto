@@ -27,7 +27,7 @@ let data_dir = ref ""
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'd') "output-dir" (StringVal data_dir) "set the output directory";
+  mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the output directory";
 ]
 
 
@@ -40,8 +40,8 @@ let rec handle_one_file ops input =
     let parsed_answer = parse_answer DefaultEnrich false answer in
 
     let raw_certs = match parsed_answer.pa_content with
-      | TLSHandshake (_, _, _, certs) -> certs
-      | SSLv2Handshake (_, _, cert) -> [cert]
+      | TLSHandshake h -> h.certificates
+      | SSLv2Handshake h -> [h.certificate]
       | _ -> []
     in
     (* TODO: Handle broken certificates in a better way? *)
@@ -50,7 +50,7 @@ let rec handle_one_file ops input =
     let answer_type, version, ciphersuite, alert_level, alert_type = match parsed_answer.pa_content with
       | Empty -> "0", "", "", "", ""
       | Junk _ -> "1", "", "", "", ""
-      | SSLv2Handshake (v, [], _) -> "20", string_of_int (int_of_tls_version v), "", "", ""
+      | SSLv2Handshake {version = v; cipher_specs = []} -> "20", string_of_int (int_of_tls_version v), "", "", ""
 
       | SSLv2Alert e ->
          "10", "2", "", "2", string_of_int (int_of_ssl2_error e)
@@ -58,10 +58,12 @@ let rec handle_one_file ops input =
          "11", string_of_int (int_of_tls_version v), "",
          string_of_int (int_of_tls_alert_level al), string_of_int (int_of_tls_alert_type at)
 
-      | SSLv2Handshake (v, c::_, _) ->
+      | SSLv2Handshake {version = v; cipher_specs = c::_} ->
          "20", string_of_int (int_of_tls_version v), string_of_int (int_of_ciphersuite c), "", ""
-      | TLSHandshake (_, v, c, _) ->
-         "21", string_of_int (int_of_tls_version v), string_of_int (int_of_ciphersuite c), "", ""
+      | TLSHandshake h ->
+         "21",
+         string_of_int (int_of_tls_version h.server_hello_version),
+         string_of_int (int_of_ciphersuite h.ciphersuite), "", ""
     in
 
     let chain_hash = CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc unchecked_certs)) in
@@ -94,7 +96,7 @@ let rec handle_one_file ops input =
 
 
 let _ =
-  let dump_files = parse_args ~progname:"piatto" options Sys.argv in
+  let dump_files = parse_args ~progname:"injectAnswerDump" options Sys.argv in
   try
     let ops = prepare_data_dir !data_dir in
     let open_files = function

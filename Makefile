@@ -1,9 +1,9 @@
 # configurable section
-TARGETS = piatto parseCerts prepareLinks checkLinks \
+TARGETS = injectAnswerDump parseCerts prepareLinks checkLinks \
 	writeLine dumpFile readFile listFiles mergeRawFiles \
 	removeIsolatedCerts computeComponents buildChains
 
-piatto_SRCS := fileOps.ml piatto.ml
+injectAnswerDump_SRCS := fileOps.ml injectAnswerDump.ml
 parseCerts_SRCS := fileOps.ml parseCerts.ml
 prepareLinks_SRCS := fileOps.ml prepareLinks.ml
 checkLinks_SRCS := fileOps.ml checkLinks.ml
@@ -36,5 +36,5 @@ EXTRA_OCAMLC_LD_FLAGS =
 BUILD_DIR = build
 
 
-include ../common/Makefile.ocaml
+include Makefile.ocaml
 

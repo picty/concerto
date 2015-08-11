@@ -1,10 +1,59 @@
+= TODO in concerto-ng =
+ - Sort this TODO!
+ - Add some features to fileOps (see TODO inside)
+ - Write a clean merge
+ - Add inject-db.sh
+ - Rewrite piccolo
+ - Add options for parseCerts (-out-prefix) and for merge (-in-prefix) to allow parallel tools on the same directory
+ - Find a way to annotate stuff (trust info on certs and chains and IPs) => the SQL db ?
+
+ - Write gradeChains
+ - Write tools to handle trust
+   * annotate-trust cert
+   * propagate-trust (certs/chains)
+
+
+= Add an index to raw/ =
+
+The idea would be that opening raw, the code would open raw/certs.index with namelen/name/offset/len for each cert and update it at the end.
+
+When loading the first raw/certs/?
+ - look for raw/certs.index
+   => if it exists, load the data
+   => if it does not, rebuild the index with rebuild_index (which is essentially what we do now)
+ - do as before
+
+When adding a file raw/certs/? that does not exist
+ - remove raw/certs.index.bak if it existed
+ - rename raw/certs.index raw/certs.index.bak
+ - mark certs as dirty
+ - do as before
+
+When closing all
+ - for each dirty filetype
+ - rewrite the index
+ - remove raw/certs.index.bak
+
+
+This would allow for
+ - better perfs
+ - a clear update path
+ - a way to list all certs easily
+
+
+= Add a R ^ W for dumped files ? =
+
+
+
+
+
+
 Campaigns
  - Proper support for multiple A records when resolving names
  - Add tools to probe a list (adapt probe_server)
  - Add tools to extract IPs and names from a database, possibly subject to some conditions (campaign id)
 
 AnswerDump -> CSV
- - Do not analyse links and chains too early
  - Handle warning-level "Unrecognized name" alerts preceding valid handshake messages
 
 scans.io -> CSV
@@ -16,9 +65,7 @@ DB injection
  - Allow for different back-ends (sqlite, pgsql)
 
 Analysis -> DB injection
- - Allow for progressive enrichment (links, revocation, chains)
- - links table should contain all possible links (subject/issuer) and states wheteher the link
-   is valid or not (and also the reason, to avoid complicated research with the raw data)
+ - Add support for revocation
  - Add support for arbitrary trust anchors (at rendering level)
  - Add support for name constraints (and the possibility to add them in the db)
 

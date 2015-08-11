@@ -3,3 +3,16 @@
 *.cmi
 *.cmo
 *.cmx
+build
+injectAnswerDump
+parseCerts
+prepareLinks
+checkLinks
+writeLine
+dumpFile
+readFile
+listFiles
+mergeRawFiles
+removeIsolatedCerts
+computeComponents
+buildChains
