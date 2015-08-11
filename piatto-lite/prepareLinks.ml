@@ -1,18 +1,25 @@
+(* prepareLinks.ml
+
+   Inputs:
+    - certs.csv (or other csv files specified as args)
+
+   Outputs:
+    - possible_links.csv
+ *)
+
 open Parsifal
 open Getopt
 open FileOps
 
-let verbose = ref false
 let rundry = ref false
 let accept_v1_ca = ref false
-let output_dir = ref ""
+let data_dir = ref ""
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'n') "run-dry" (Set rundry) "do not produce links.csv, just count the lines";
   mkopt (Some '1') "accept-version1-ca" (Set accept_v1_ca) "accept X.509v1 certificates as CA";
-  mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory";
+  mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
 ]
 
 
@@ -21,25 +28,12 @@ let cert_hash_by_subject_hash = Hashtbl.create 1000
 
 let is_ca version isCA = isCA = "1" || (version = "1" && !accept_v1_ca)
 
-let add_line l =
-  match List.map unquote (string_split ':' l) with
+let add_line = function
   | cert_hash::version::serial::subject_hash::issuer_hash::
       _not_before::_not_after::_key_type::_rsa_modulus::_rsa_exponent::isCA::ski::aki_ki::aki_serial::_ ->
     Hashtbl.add issuer_hash_by_cert_hash cert_hash (issuer_hash, aki_ki, aki_serial);
     if is_ca version isCA then Hashtbl.add cert_hash_by_subject_hash subject_hash (cert_hash, ski, serial)
   | _ -> ()
-
-let read_csv csvname =
-  let f = open_in csvname in
-  let rec handle_line f =
-    let line = try Some (input_line f) with End_of_file -> None in
-    match line with
-    | None -> close_in f
-    | Some l ->
-      add_line l;
-      handle_line f
-  in
-  handle_line f
 
 let filter_fun aki_ki aki_serial (_, ski, serial) = (aki_ki = "" || aki_ki = ski) && (aki_serial = "" || aki_serial = serial)
 
@@ -60,11 +54,14 @@ let count_possible_links total _cert_hash (issuer_hash, aki_ki, aki_serial) (n_c
   new_n_certs, new_n_links
 
 let _ =
-  let csv_files = parse_args ~progname:"prepareLinks" options Sys.argv in
+  let csv_files = match parse_args ~progname:"prepareLinks" options Sys.argv with
+    | [] -> ["certs"]
+    | l -> l
+  in
   try
-    List.iter read_csv csv_files;
+    let ops = prepare_data_dir !data_dir in
+    List.iter (fun csv -> ops.iter_lines csv add_line) csv_files;
     if not !rundry then begin
-      let ops = prepare_data_dir !output_dir in
       Hashtbl.iter (write_possible_links ops) issuer_hash_by_cert_hash;
       ops.close_all_files ()
     end else begin
