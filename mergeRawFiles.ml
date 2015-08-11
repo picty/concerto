@@ -26,7 +26,7 @@ let _ =
         let contents = in_ops.read_file !filetype name in
         out_ops.dump_file !filetype name contents
       in
-      List.iter (fun prefix -> List.iter copy_file (in_ops.list_files !filetype prefix)) prefixes;
+      List.iter (fun prefix -> List.iter copy_file (in_ops.list_files_by_prefix !filetype prefix)) prefixes;
       in_ops.close_all_files ();
       print_endline "OK."
     in

@@ -1,18 +1,28 @@
 # configurable section
-TARGETS = injectAnswerDump parseCerts prepareLinks checkLinks \
-	writeLine dumpFile readFile listFiles mergeRawFiles \
+TARGETS = listCSVFiles writeLine dumpFile readFile \
+	listRawTypes listRawPrefixes listRawByPrefix listRawByType \
+	mergeDirs mergeRawFiles \
+	injectAnswerDump parseCerts prepareLinks checkLinks \
 	removeIsolatedCerts computeComponents buildChains \
-	flagTrust rateChains
+	flagTrust rateChains \
+
+listCSVFiles_SRCS := fileOps.ml listCSVFiles.ml
+writeLine_SRCS := fileOps.ml writeLine.ml
+
+dumpFile_SRCS := fileOps.ml dumpFile.ml
+readFile_SRCS := fileOps.ml readFile.ml
+listRawTypes_SRCS := fileOps.ml listRawTypes.ml
+listRawPrefixes_SRCS := fileOps.ml listRawPrefixes.ml
+listRawByPrefix_SRCS := fileOps.ml listRawByPrefix.ml
+listRawByType_SRCS := fileOps.ml listRawByType.ml
+
+mergeDirs_SRCS := fileOps.ml mergeDirs.ml
+mergeRawFiles_SRCS := fileOps.ml mergeRawFiles.ml
 
 injectAnswerDump_SRCS := fileOps.ml injectAnswerDump.ml
 parseCerts_SRCS := fileOps.ml parseCerts.ml
 prepareLinks_SRCS := fileOps.ml prepareLinks.ml
 checkLinks_SRCS := fileOps.ml checkLinks.ml
-writeLine_SRCS := fileOps.ml writeLine.ml
-dumpFile_SRCS := fileOps.ml dumpFile.ml
-readFile_SRCS := fileOps.ml readFile.ml
-listFiles_SRCS := fileOps.ml listFiles.ml
-mergeRawFiles_SRCS := fileOps.ml mergeRawFiles.ml
 removeIsolatedCerts_SRCS := fileOps.ml removeIsolatedCerts.ml
 computeComponents_SRCS := fileOps.ml computeComponents.ml
 buildChains_SRCS := fileOps.ml buildChains.ml

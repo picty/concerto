@@ -102,7 +102,7 @@ let populate_certs_table ops sc =
   end
 
 let handle_one_prefix ops prefix =
-  let files = ops.list_files "certs" prefix in
+  let files = ops.list_files_by_prefix "certs" prefix in
   let handle_one_file (name, _, _) =
     let raw_contents = ops.read_file "certs" name in
     let sc = sc_of_raw_value name false raw_contents in

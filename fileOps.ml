@@ -21,10 +21,10 @@ type file_ops = {
   write_line : string -> string -> string list -> unit;
 
   (* Read/Write operations for binary files *)
+  list_files_by_prefix : string -> string -> (string * int * int) list;
   read_file : string -> string -> string;
   dump_file : string -> string -> string -> unit;
-  list_files : string -> string -> (string * int * int) list;
-  
+
   close_all_files : unit -> unit;
 }
 
@@ -174,7 +174,7 @@ let prepare_data_dir data_dir =
     output_string f "\n";
     Hashtbl.replace keys key ()
 
-  and list_files filetype name =
+  and list_files_by_prefix filetype name =
     let _, _, keys = open_binfile filetype name in
     let inner_fun name (offset, len) accu = (name, offset, len)::accu in
     Hashtbl.fold inner_fun keys []
@@ -217,5 +217,5 @@ let prepare_data_dir data_dir =
   in
   { iter_lines; iter_lines_accu;
     check_key_freshness; write_line;
-    read_file; dump_file; list_files;
+    read_file; dump_file; list_files_by_prefix;
     close_all_files; }
