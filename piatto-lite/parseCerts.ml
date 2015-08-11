@@ -1,3 +1,18 @@
+(* parseCerts.ml
+
+   Inputs:
+    - certs/
+
+   Argument:
+    - prefixes (00-ff)
+
+   Outputs:
+    - certs.csv
+    - dns.csv
+    - names.csv
+    - unparsed_certs.csv
+ *)
+
 open Parsifal
 open X509
 open X509Util
@@ -5,17 +20,11 @@ open X509Extensions
 open Getopt
 open FileOps
 
-let verbose = ref false
-let output_dir = ref ""
-let input_dir = ref ""
-let file_type = ref ""
+let data_dir = ref ""
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
-  mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory for parsed data";
-  mkopt (Some 'i') "input-dir" (StringVal input_dir) "set the input directory containing raw certs";
-  mkopt (Some 't') "file-type" (StringVal file_type) "...";
+  mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
 ]
 
 
@@ -91,24 +100,23 @@ let populate_certs_table ops sc =
       ops.write_line "unparsed_certs" h [hexdump h; Printexc.to_string e]
   end
 
-let handle_one_prefix out_ops in_ops file_type prefix =
-  let files = in_ops.list_files file_type prefix in
+let handle_one_prefix ops prefix =
+  let files = ops.list_files "certs" prefix in
   let handle_one_file (name, _, _) =
-    let raw_contents = in_ops.read_file file_type name in
+    let raw_contents = ops.read_file "certs" name in
     let sc = sc_of_raw_value name false raw_contents in
-    populate_certs_table out_ops sc
+    populate_certs_table ops sc
   in
   List.iter handle_one_file files
 
 
 let _ =
+  (* TODO: Rewrite this when we have a proper list_all_files operation *)
   let prefixes = parse_args ~progname:"parse-certs" options Sys.argv in
   try
-    let output_ops = prepare_data_dir !output_dir
-    and input_ops = prepare_data_dir !input_dir in
-    List.iter (handle_one_prefix output_ops input_ops !file_type) prefixes;
-    output_ops.close_all_files ();
-    input_ops.close_all_files ()
+    let ops = prepare_data_dir !data_dir in
+    List.iter (handle_one_prefix ops) prefixes;
+    ops.close_all_files ()
   with
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
     | e -> prerr_endline (Printexc.to_string e); exit 1

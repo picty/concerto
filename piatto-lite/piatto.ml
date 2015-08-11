@@ -1,3 +1,13 @@
+(* piatto.ml
+
+   Argument:
+    - dump files
+
+   Outputs:
+    - answers.csv
+    - chains.csv
+ *)
+
 open Parsifal
 open Getopt
 open Lwt
@@ -12,12 +22,12 @@ open FileOps
 
 
 let verbose = ref false
-let output_dir = ref ""
+let data_dir = ref ""
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory for dump2html or dump2csv";
+  mkopt (Some 'd') "output-dir" (StringVal data_dir) "set the output directory";
 ]
 
 
@@ -86,7 +96,7 @@ let rec handle_one_file ops input =
 let _ =
   let dump_files = parse_args ~progname:"piatto" options Sys.argv in
   try
-    let ops = prepare_data_dir !output_dir in
+    let ops = prepare_data_dir !data_dir in
     let open_files = function
       | [] -> input_of_channel ~verbose:(!verbose) "(stdin)" Lwt_io.stdin >>= fun x -> return [x]
       | _ -> Lwt_list.map_s input_of_filename dump_files
