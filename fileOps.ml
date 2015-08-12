@@ -103,8 +103,9 @@ let prepare_data_dir data_dir =
     with
       Not_found ->
         (* TODO: Here we do not guarantee anymore the absence of dupes, as soon as we append! *)
-        let f = open_out_gen [Open_wronly; Open_append; Open_creat] 0o644 (data_dir ^ "/" ^ csv_name ^ ".csv") in
-        Unix.lockf (Unix.descr_of_out_channel f) Unix.F_LOCK 0;
+        let fd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_WRONLY; Unix.O_APPEND; Unix.O_CREAT] 0o644 in
+        Unix.lockf fd Unix.F_LOCK 0;
+        let f = Unix.out_channel_of_descr fd in
         let keys = Hashtbl.create 100 in
         Hashtbl.replace open_wfiles csv_name (f, keys);
         f, keys
@@ -170,8 +171,9 @@ let prepare_data_dir data_dir =
 
   (* TODO: Factor the two following functions? *)
   and iter_lines csv_name line_handler =
-    let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
-    Unix.lockf (Unix.descr_of_in_channel f) Unix.F_RLOCK 0;
+    let fd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_RDONLY; Unix.O_CREAT] 0o644 in
+    Unix.lockf fd Unix.F_RLOCK 0;
+    let f = Unix.in_channel_of_descr fd in
     let rec handle_line f =
       let line = try Some (input_line f) with End_of_file -> None in
       match line with
@@ -190,8 +192,9 @@ let prepare_data_dir data_dir =
     in
     handle_line f
   and iter_lines_accu csv_name line_handler initial_accu =
-    let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
-    Unix.lockf (Unix.descr_of_in_channel f) Unix.F_RLOCK 0;
+    let fd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_RDONLY; Unix.O_CREAT] 0o644 in
+    Unix.lockf fd Unix.F_RLOCK 0;
+    let f = Unix.in_channel_of_descr fd in
     let rec handle_line accu f =
       let line = try Some (input_line f) with End_of_file -> None in
       match line with
