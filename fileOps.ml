@@ -3,7 +3,6 @@ open Parsifal
 
 
 (* TODO
- - Rewrite a correct version of list (it might be in two parts: list-prefixes and list-prefix
  - Enforce R ^ W on bin files ?
  - Add an option to check whether a file exists before destroying it or appending it
    (sometimes we need to start from scratch, but might want to warn the user before
@@ -13,6 +12,7 @@ open Parsifal
 *)
 type file_ops = {
   (* Read operations for CSV file *)
+  list_csv_files : unit -> string list;
   iter_lines : string -> (string list -> unit) -> unit;
   iter_lines_accu : 'a. string -> ('a -> string list -> 'a) -> 'a -> 'a;
 
@@ -21,6 +21,8 @@ type file_ops = {
   write_line : string -> string -> string list -> unit;
 
   (* Read/Write operations for binary files *)
+  list_filetypes : unit -> string list;
+  list_prefixes : string -> string list;
   list_files_by_prefix : string -> string -> (string * int * int) list;
   read_file : string -> string -> string;
   dump_file : string -> string -> string -> unit;
@@ -42,6 +44,47 @@ let unquote s =
   try ignore (String.index result '"'); failwith "unquote: too many quotes!"
   with Not_found -> result
 
+
+let list_dir filter_funs dirname =
+  let dirfd = Unix.opendir dirname in
+  let rec list_dir_aux accu =
+    let next_entry =
+      try Some (Unix.readdir dirfd)
+      with End_of_file -> Unix.closedir dirfd; None
+    in
+    let apply_filters filters x =
+      let results = List.map (fun f -> f (dirname, x)) filters in
+      List.fold_left (&&) true results
+    in
+    match next_entry with
+    | Some e ->
+       if apply_filters filter_funs e
+       then list_dir_aux (e::accu)
+       else list_dir_aux accu
+    | None -> List.rev accu
+  in
+  list_dir_aux []
+
+let check_file_kind k (dirname, basename) =
+  let stats = Unix.stat (dirname ^ "/" ^ basename) in
+  stats.Unix.st_kind = k
+
+let check_extension ext (_, basename) =
+  let f_len = String.length basename
+  and e_len = String.length ext in
+  if f_len > e_len
+  then String.sub basename (f_len - e_len) e_len = ext
+  else false
+
+let remove_extension ext basename =
+  let f_len = String.length basename
+  and e_len = String.length ext in
+  if f_len > e_len && String.sub basename (f_len - e_len) e_len = ext
+  then String.sub basename 0 (f_len - e_len)
+  else basename
+
+let remove_hidden_files (_, basename) =
+  String.length basename > 1 && basename.[0] <> '.'
 
 
 exception InvalidNumberOfFields of int
@@ -122,8 +165,11 @@ let prepare_data_dir data_dir =
 
   (* CSV operations *)
 
+  let list_csv_files () =
+    list_dir [check_file_kind Unix.S_REG; check_extension ".csv"] data_dir
+
   (* TODO: Factor the two following functions? *)
-  let iter_lines csv_name line_handler =
+  and iter_lines csv_name line_handler =
     let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
     Unix.lockf (Unix.descr_of_in_channel f) Unix.F_RLOCK 0;
     let rec handle_line f =
@@ -143,7 +189,6 @@ let prepare_data_dir data_dir =
             raise e
     in
     handle_line f
-
   and iter_lines_accu csv_name line_handler initial_accu =
     let f = open_in (data_dir ^ "/" ^ csv_name ^ ".csv") in
     Unix.lockf (Unix.descr_of_in_channel f) Unix.F_RLOCK 0;
@@ -174,6 +219,12 @@ let prepare_data_dir data_dir =
     output_string f "\n";
     Hashtbl.replace keys key ()
 
+  and list_filetypes () =
+    list_dir [check_file_kind Unix.S_DIR; remove_hidden_files] (data_dir ^ "/raw")
+  and list_prefixes filetype =
+    let filters = [check_file_kind Unix.S_REG; check_extension ".pack"]
+    and dir = (data_dir ^ "/raw/" ^ filetype) in
+    List.map (remove_extension ".pack") (list_dir filters dir)
   and list_files_by_prefix filetype name =
     let _, _, keys = open_binfile filetype name in
     let inner_fun name (offset, len) accu = (name, offset, len)::accu in
@@ -215,7 +266,18 @@ let prepare_data_dir data_dir =
     Hashtbl.clear open_binfiles
 
   in
-  { iter_lines; iter_lines_accu;
+  { list_csv_files; iter_lines; iter_lines_accu;
     check_key_freshness; write_line;
-    read_file; dump_file; list_files_by_prefix;
+    list_filetypes; list_prefixes; list_files_by_prefix;
+    read_file; dump_file;
     close_all_files; }
+
+
+let iter_raw_metadata ops filetype f =
+  let handle_one_file metadata = f metadata in
+  let handle_one_prefix prefix = List.iter handle_one_file (ops.list_files_by_prefix filetype prefix) in
+  List.iter handle_one_prefix (ops.list_prefixes filetype)
+
+let iter_raw_files ops filetype f =
+  let real_f (n, _, _) = f n (ops.read_file filetype n) in
+  iter_raw_metadata ops filetype real_f

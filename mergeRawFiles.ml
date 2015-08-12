@@ -16,17 +16,15 @@ let options = [
 
 
 let _ =
-  let prefixes = parse_args ~progname:"mergeRawFiles" options Sys.argv in
+  (* TODO: Ensure this _ is [] *)
+  let _ = parse_args ~progname:"mergeRawFiles" options Sys.argv in
   try
     let out_ops = prepare_data_dir !output_dir in
     let handle_input_dir input_dir =
       print_string ("Handling " ^ input_dir ^ "... ");
       let in_ops = prepare_data_dir input_dir in
-      let copy_file (name, _, _) =
-        let contents = in_ops.read_file !filetype name in
-        out_ops.dump_file !filetype name contents
-      in
-      List.iter (fun prefix -> List.iter copy_file (in_ops.list_files_by_prefix !filetype prefix)) prefixes;
+      let copy_file name contents = out_ops.dump_file !filetype name contents in
+      iter_raw_files in_ops !filetype copy_file;
       in_ops.close_all_files ();
       print_endline "OK."
     in
