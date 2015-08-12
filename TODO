@@ -1,10 +1,29 @@
-= TODO in concerto-ng =
- - Sort this TODO!
- - Add some features to fileOps (see TODO inside)
- - Rewrite piccolo
+= Next steps =
+ - Add a tool to inject stimuli
+ - Add a table stimuli/campaign
+ - Add an option to override the campaign id and to link a campaign to a stimulus
+ - Add checks to verify the conformity of an answer to the emitted client_hello
+ - Add a tool to probe server with a given client_hello
+ - Add a tool to retrieve CRLs
+ - Rewrite piccolo (js, limit some stuff when it's too long)
+   * essentially add a path for each table
+   * add support for partial info (no answer_dump, no stimulus, ...)
+   * add search fields
+   * add random samples
  - Write a clean merge to help parallel executions
+   * iter_lines on all CSV to add to the new
+   * possibility on the command line to indicate which file should be checked for dupes (complete line or some "key" fields), e.g. chains?
+   * iter on filetypes to cp.
  - Add options for parseCerts (-out-prefix) and for merge (-in-prefix) to allow parallel tools on the same directory
- - Optimize storage (internally use binary hashes, binary representation instead of csv?, SQL types and indexes?)
+ - Find a way to handle transitive_links
+ - Try it on a whole campaign and see what needs improvements!
+
+= Various TODO in concerto-ng =
+ - Add an index to raw (see below)
+ - Add some features to fileOps (see TODO inside)
+ - Optimize storage (internally use binary hashes, binary representation instead of csv?, SQL types and indexes?) => provide a fileOps interface and several implementations (csv, bin-csv, compressed, others)
+
+
 
 = Add an index to raw/ =
 
@@ -34,9 +53,6 @@ This would allow for
  - a way to list all certs easily
 
 
-= Add a R ^ W for dumped files ? =
-
-
 
 
 
@@ -54,9 +70,8 @@ scans.io -> CSV
 
 DB injection
  - Allow for DB reuse (with different campaign ids)
- - New tool to check DB internal consistency (should be replaced by real constraints?)
+ - New tool to check DB internal consistency (n_transvalid is duplicated for example)
  - Allow for different back-ends (sqlite, pgsql)
- - Add internal consistency checks (n_transvalid is duplicated for example)
 
 Analysis -> DB injection
  - Add support for revocation
