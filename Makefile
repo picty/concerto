@@ -30,7 +30,7 @@ flagTrust_SRCS := fileOps.ml flagTrust.ml
 rateChains_SRCS := fileOps.ml rateChains.ml
 
 # comment this line if not using camlp4
-USE_CAMLP4 = yes
+# USE_CAMLP4 = yes
 
 CC = gcc
 
@@ -41,9 +41,9 @@ OCAML_LIBS = unix lwt lwt.unix str calendar cryptokit \
         parsifal_net parsifal_lwt parsifal_ssl
 
 # use the following variables to add extra flags (not guessed by ocamlfind)
-EXTRA_OCAMLOPT_CC_FLAGS = -package parsifal_syntax
+EXTRA_OCAMLOPT_CC_FLAGS =
 EXTRA_OCAMLOPT_LD_FLAGS =
-EXTRA_OCAMLC_CC_FLAGS = -package parsifal_syntax
+EXTRA_OCAMLC_CC_FLAGS =
 EXTRA_OCAMLC_LD_FLAGS =
 
 BUILD_DIR = build
