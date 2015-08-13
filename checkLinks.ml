@@ -33,6 +33,7 @@ let check_one_line ops = function
 let _ =
   (* TODO: Check that this _ is [] *)
   let _ = parse_args ~progname:"checkLinks" options Sys.argv in
+  if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
   try
     let ops = prepare_data_dir !data_dir in
     ops.iter_lines "possible_links" (check_one_line ops);

@@ -28,7 +28,7 @@ let data_dir = ref ""
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the output directory";
+  mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
 ]
 
 
@@ -98,6 +98,7 @@ let rec handle_one_file ops input =
 
 let _ =
   let dump_files = parse_args ~progname:"injectAnswerDump" options Sys.argv in
+  if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
   try
     let ops = prepare_data_dir !data_dir in
     let open_files = function

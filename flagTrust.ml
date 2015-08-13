@@ -70,6 +70,7 @@ let update_trusted_chains trusted_certs trusted_chains = function
 
 let _ =
   let certs = parse_args ~progname:"flagTrust" options Sys.argv in
+  if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
   if certs = [] then usage "flagTrust" options (Some "Please provide at least one certificate.");
   try
     let cert_hashes = List.map extract_cert_hash certs in
