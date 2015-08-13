@@ -16,6 +16,7 @@ listRawByType
 mergeDirs
 mergeRawFiles
 injectAnswerDump
+inject
 parseCerts
 prepareLinks
 checkLinks
