@@ -1,4 +1,4 @@
-(* piatto.ml
+(* injectAnswerDump.ml
 
    Argument:
     - dump files
@@ -6,6 +6,7 @@
    Outputs:
     - answers.csv
     - chains.csv
+    - certs
  *)
 
 open Parsifal

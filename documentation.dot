@@ -1,0 +1,90 @@
+digraph concerto {
+  # Programs
+  {
+    node [shape=box, fontname="Courier-bold"];
+    injectAnswerDump;
+    injectCerts;
+    parseCerts;
+    prepareLinks;
+    checkLinks;
+    buildChains;
+    flagTrust;
+    rateChains;
+  
+#    computeComponents;
+#    removeIsolatedCerts;
+
+    piccolo;
+  }
+
+
+  # CSV
+  {
+    node [shape=parallelogram, style=diagonals];
+    answers;
+    chains;
+    certs;
+    dns;
+    names;
+    unparsed_certs;
+    possible_links;
+    links;
+    built_chains;
+    built_links;
+    unused_certs;
+    trusted_certs;
+    trusted_chains;
+    rated_chains;
+  }
+
+
+  # Given binary files
+  {
+    node [fillcolor=grey, style=filled];
+    dump_files [label="answer dumps"];
+    trusted_cert_files [label="trusted certs"];
+    { rank=same; dump_files trusted_cert_files }
+  }
+
+  # Produced binary files
+  {
+    node [fillcolor=grey, style=rounded, style=filled]
+    cert_files [label="certs"];
+  }
+
+
+  dump_files -> injectAnswerDump;
+  injectAnswerDump -> answers;
+  injectAnswerDump -> chains;
+  injectAnswerDump -> cert_files;
+
+  trusted_cert_files -> injectCerts -> cert_files;
+
+  cert_files -> parseCerts;
+  parseCerts -> certs;
+  parseCerts -> dns;
+  parseCerts -> names;
+  parseCerts -> unparsed_certs;
+
+  certs -> prepareLinks -> possible_links;
+
+  possible_links -> checkLinks;
+  cert_files -> checkLinks;
+  checkLinks -> links;
+
+  links -> buildChains;
+  chains -> buildChains;
+  buildChains -> built_chains;
+  buildChains -> built_links;
+  buildChains -> unused_certs;
+
+  trusted_cert_files -> flagTrust;
+  links -> flagTrust;
+  built_links -> flagTrust;
+  flagTrust -> trusted_certs;
+  flagTrust -> trusted_chains;
+
+  built_chains -> rateChains;
+  trusted_chains -> rateChains;
+  rateChains -> rated_chains;
+}
