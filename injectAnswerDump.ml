@@ -24,18 +24,28 @@ open FileOps
 
 let verbose = ref false
 let data_dir = ref ""
+let campaign_id = ref None
+let update_campaign_id id = campaign_id := Some id; ActionDone
+
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
+  mkopt (Some 'C') "campaign" (IntFun update_campaign_id) "override the campaign id (default is to use data from the dump.";
 ]
 
+let get_campaign_from_dump a =
+  string_of_int a.campaign
 
-let rec handle_one_file ops input =
+let get_campaign_from_cmdline id =
+  let value = string_of_int id in
+  fun _a -> value
+
+let rec handle_one_file get_campaign ops input =
   let finalize_ok answer =
     let ip_str = string_of_v2_ip answer.ip_addr in
-    let campaign = string_of_int answer.campaign in
+    let campaign = get_campaign answer in
     (* TODO: Is this useful? *)
     enrich_record_content := true;
     let parsed_answer = parse_answer DefaultEnrich false answer in
@@ -83,7 +93,7 @@ let rec handle_one_file ops input =
       let save_cert sc = ops.dump_file "certs" (hexdump (hash_of_sc sc)) (raw_value_of_sc sc)
       in List.iter save_cert unchecked_certs
     end;
-    handle_one_file ops input
+    handle_one_file get_campaign ops input
 
   and finalize_nok = function
     | (ParsingException _) as e ->
@@ -100,12 +110,15 @@ let _ =
   let dump_files = parse_args ~progname:"injectAnswerDump" options Sys.argv in
   if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
   try
-    let ops = prepare_data_dir !data_dir in
+    let get_campaign = match !campaign_id with
+      | None -> get_campaign_from_dump
+      | Some id -> get_campaign_from_cmdline id
+    and ops = prepare_data_dir !data_dir in
     let open_files = function
       | [] -> input_of_channel ~verbose:(!verbose) "(stdin)" Lwt_io.stdin >>= fun x -> return [x]
       | _ -> Lwt_list.map_s input_of_filename dump_files
     in
-    Lwt_unix.run (open_files dump_files >>= Lwt_list.iter_s (handle_one_file ops));
+    Lwt_unix.run (open_files dump_files >>= Lwt_list.iter_s (handle_one_file get_campaign ops));
     ops.close_all_files ()
   with
     | ParsingException (e, h) -> 
