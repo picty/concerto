@@ -103,8 +103,9 @@ create table trusted_chains(
 create table rated_chains(
        chain_hash text,
        built_chain_number int,
+       trust_flag text,
        grade text,
-       primary key (chain_hash, built_chain_number)
+       primary key (chain_hash, built_chain_number, trust_flag)
 );
 
 
