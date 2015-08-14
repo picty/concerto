@@ -77,7 +77,11 @@ let rec handle_one_file get_campaign ops input =
          string_of_int (int_of_ciphersuite h.ciphersuite), "", ""
     in
 
-    let chain_hash = CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc unchecked_certs)) in
+    let chain_hash =
+      if unchecked_certs = []
+      then ""
+      else CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc unchecked_certs))
+    in
     if ops.check_key_freshness "answers" (ip_str ^ campaign ^ answer.name) then begin
       ops.write_line "answers" (ip_str ^ campaign ^ answer.name)
         [campaign; ip_str; string_of_int answer.port; answer.name;

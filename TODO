@@ -2,7 +2,6 @@
  - Add a tool to inject stimuli
  - Add a table stimuli/campaign
  - Add a way to link a campaign to a stimulus
- - Clean up answers.csv to have empty chains (instead of SHA1("")) for E and J answers
  - Import de ce qui vient de scans.io
  - Add checks to verify the conformity of an answer to the emitted client_hello
  - Add a tool to probe server with a given client_hello
