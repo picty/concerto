@@ -91,9 +91,15 @@ let populate_certs_table ops sc =
       if ops.check_key_freshness "dns" issuer_hash
       then ops.write_line "dns" issuer_hash [hexdump issuer_hash; issuer];
 
-      List.iter (fun (name_type, name_value) ->
-        ops.write_line "names" "" [hexdump h; name_type; name_value])
-        (names_extracted);
+      let save_name previous_names ((name_type, name_value) as name) =
+        if List.mem name previous_names
+        then previous_names
+        else begin
+          ops.write_line "names" "" [hexdump h; name_type; name_value];
+          name::previous_names
+        end
+      in
+      ignore (List.fold_left save_name [] (names_extracted))
     with
     | ParsingException (e, hh) ->
       ops.write_line "unparsed_certs" h [hexdump h; string_of_exception e hh]
