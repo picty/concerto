@@ -60,11 +60,13 @@ let read_certs_validity ops =
   certs_validity
 
 let compute_chain_validity certs_validity certs =
-  let constrain_interval (cur_min, cur_max) (_, h) =
-    let nB, nA = Hashtbl.find certs_validity h in
-    max nB cur_min, min nA cur_max
-  in
-  List.fold_left constrain_interval (0L, Int64.max_int) certs
+  try
+    let constrain_interval (cur_min, cur_max) (_, h) =
+      let nB, nA = Hashtbl.find certs_validity h in
+      max nB cur_min, min nA cur_max
+    in
+    Some (List.fold_left constrain_interval (0L, Int64.max_int) certs)
+  with Not_found -> None
 
 
 let build_certchain max_transvalid links certs_hash =
@@ -160,7 +162,9 @@ let handle_chains_file links certs_validity ops =
        let certs_h = List.mapi check_i ordered_certs_h in
        let built_chains = build_certchain !max_transvalid links certs_h in
        let write_built_chain i (certs_hash, unused_certs, complete, n_ordered) =
-         let nB, nA = compute_chain_validity certs_validity certs_hash
+         let nB, nA = match compute_chain_validity certs_validity certs_hash with
+           | Some (x, y) -> x, y
+           | None -> -1L, -1L
          and len = List.length certs_hash in
          let ordered = n_ordered = len ||
                          (n_ordered = len - 1 && (is_root_transvalid certs_hash))
