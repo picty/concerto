@@ -179,16 +179,19 @@ let prepare_data_dir data_dir =
       match line with
       | None -> close_in f
       | Some l ->
-         try
-           line_handler (List.map unquote (string_split ':' l));
-           handle_line f
-         with
-         | InvalidNumberOfFields n ->
-            close_in f;
-            failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (quote_string l))
-         | e ->
-            close_in f;
-            raise e
+         begin
+           try
+             line_handler (List.map unquote (string_split ':' l));
+           with
+           | InvalidNumberOfFields n ->
+              close_in f;
+              failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (quote_string l))
+           | e ->
+              close_in f;
+              raise e
+         end;
+         handle_line f
+
     in
     handle_line f
   and iter_lines_accu csv_name line_handler initial_accu =
@@ -200,16 +203,18 @@ let prepare_data_dir data_dir =
       match line with
       | None -> close_in f; accu
       | Some l ->
-         try
-           let new_accu = line_handler accu (List.map unquote (string_split ':' l)) in
-           handle_line new_accu f
-         with
-         | InvalidNumberOfFields n ->
-            close_in f;
-            failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (quote_string l))
-         | e ->
-            close_in f;
-            raise e
+         let new_accu =
+           try
+             line_handler accu (List.map unquote (string_split ':' l))
+           with
+           | InvalidNumberOfFields n ->
+              close_in f;
+              failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (quote_string l))
+           | e ->
+              close_in f;
+              raise e
+         in
+         handle_line new_accu f
     in
     handle_line initial_accu f
 
