@@ -29,13 +29,13 @@ let options = [
 
 
 let populate_chains chains = function
-  | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; _; _] ->
+  | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; _; _; _] ->
      let complete = complete_str = "1"
      and ordered = ordered_str = "1"
      and n_transvalid = int_of_string n_transvalid_str
      and n_unused = int_of_string n_unused_str in
      Hashtbl.replace chains (chain_h, n) (complete, ordered, n_transvalid, n_unused)
-  | _ -> raise (InvalidNumberOfFields 9)
+  | _ -> raise (InvalidNumberOfFields 10)
 
 let populate_chain_trust trusted_chains = function
   | [chain_h; n; trust_mark] ->

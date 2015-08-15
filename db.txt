@@ -74,6 +74,7 @@ create table built_chains(
        n_unused int,
        not_before text,
        not_after text,
+       key_typesize text,
        primary key (chain_hash, built_chain_number)
 );
 

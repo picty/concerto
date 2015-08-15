@@ -48,24 +48,65 @@ let read_links ops =
   ops.iter_lines "links" read_links_aux;
   links
 
-let read_certs_validity ops =
-  let certs_validity = Hashtbl.create 1000 in
+
+type key_typesize =
+  | NoKeyType
+  | MostlyRSA of int | RSA of int
+  | DSA | DH | ECDSA | Unknown
+
+let key_typesize t m = match t with
+  | "RSA" ->
+     let rec compute_size m m_len i =
+       if i >= m_len
+       then 0
+       else if m.[i] = '0'
+       then compute_size m m_len (i+1)
+       else 4 * (m_len -i)
+     in
+     RSA (compute_size m (String.length m) 0)
+  | "DSA" -> DSA
+  | "DH" -> DH
+  | "ECDSA" -> ECDSA
+  | _ -> Unknown
+
+let string_of_key_typesize = function
+  | NoKeyType | Unknown -> ""
+  | MostlyRSA n -> "rsa" ^ (string_of_int n)
+  | RSA n -> "RSA" ^ (string_of_int n)
+  | DSA -> "DSA"
+  | DH -> "DH"
+  | ECDSA -> "ECDSA"
+
+let read_certs_info ops =
+  let certs_info = Hashtbl.create 1000 in
   let read_certs_aux = function
     | [cert_h; _version; _serial; _subject; _issuer; not_before; not_after;
-       _key; _modulus; _exp; _isCA; _ski; _aki_ki; _aki_serial] ->
-       Hashtbl.add certs_validity cert_h (Int64.of_string not_before, Int64.of_string not_after)
+       key; modulus; _exp; _isCA; _ski; _aki_ki; _aki_serial] ->
+       Hashtbl.add certs_info cert_h (Int64.of_string not_before, Int64.of_string not_after, key_typesize key modulus)
     | _ -> raise (InvalidNumberOfFields 14)
   in
   ops.iter_lines "certs" read_certs_aux;
-  certs_validity
+  certs_info
 
-let compute_chain_validity certs_validity certs =
+let compute_chain_info certs_info certs =
   try
-    let constrain_interval (cur_min, cur_max) (_, h) =
-      let nB, nA = Hashtbl.find certs_validity h in
-      max nB cur_min, min nA cur_max
+    let constrain_interval (cur_min, cur_max, chain_keytype) (_, h) =
+      let nB, nA, cert_keytype = Hashtbl.find certs_info h in
+      let new_chain_keytype = match chain_keytype, cert_keytype with
+        | NoKeyType, _ -> cert_keytype
+        | MostlyRSA n1, (MostlyRSA n2 | RSA n2)
+        | RSA n1, MostlyRSA n2 -> MostlyRSA (min n1 n2)
+        | RSA n1, RSA n2 -> RSA (min n1 n2)
+        | (MostlyRSA n | RSA n), _ -> MostlyRSA n
+        | _, (MostlyRSA n | RSA n) -> MostlyRSA n
+        | _ ->
+          if chain_keytype = cert_keytype
+          then chain_keytype
+          else Unknown
+      in
+      max nB cur_min, min nA cur_max, new_chain_keytype
     in
-    Some (List.fold_left constrain_interval (0L, Int64.max_int) certs)
+    Some (List.fold_left constrain_interval (0L, Int64.max_int, NoKeyType) certs)
   with Not_found -> None
 
 
@@ -149,7 +190,7 @@ let is_root_transvalid = function
   | (None, _)::_ -> true
   | _ -> false
 
-let handle_chains_file links certs_validity ops =
+let handle_chains_file links certs_info ops =
   let handle_current_chain = function
     | None -> ()
     | Some (chain_h, unordered_certs_h) ->
@@ -162,9 +203,9 @@ let handle_chains_file links certs_validity ops =
        let certs_h = List.mapi check_i ordered_certs_h in
        let built_chains = build_certchain !max_transvalid links certs_h in
        let write_built_chain i (certs_hash, unused_certs, complete, n_ordered) =
-         let nB, nA = match compute_chain_validity certs_validity certs_hash with
-           | Some (x, y) -> x, y
-           | None -> -1L, -1L
+         let nB, nA, keys = match compute_chain_info certs_info certs_hash with
+           | Some (x, y, z) -> x, y, z
+           | None -> -1L, -1L, NoKeyType
          and len = List.length certs_hash in
          let ordered = n_ordered = len ||
                          (n_ordered = len - 1 && (is_root_transvalid certs_hash))
@@ -179,6 +220,7 @@ let handle_chains_file links certs_validity ops =
            string_of_int (List.length unused_certs);
            Int64.to_string nB;
            Int64.to_string nA;
+           string_of_key_typesize keys;
          ];
          List.iteri (fun pos_in_chain (pos_in_msg, cert_hash) -> ops.write_line "built_links" "" [chain_h; string_of_int i; string_of_int pos_in_chain; (match pos_in_msg with None -> "-" | Some i -> string_of_int i); cert_hash]) (List.rev certs_hash);
          List.iter (fun (pos_in_msg, cert_hash) -> ops.write_line "unused_certs" "" [chain_h; string_of_int i; string_of_int pos_in_msg; cert_hash]) unused_certs
@@ -211,9 +253,9 @@ let _ =
   try
     let ops = prepare_data_dir !data_dir in
     let links = read_links ops
-    and certs_validity = read_certs_validity ops in
+    and certs_info = read_certs_info ops in
     if !verbose then print_endline "Links loaded.";
-    handle_chains_file links certs_validity ops;
+    handle_chains_file links certs_info ops;
     ops.close_all_files ()
   with
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
