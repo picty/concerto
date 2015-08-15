@@ -1,15 +1,11 @@
-open Parsifal
 open Getopt
 open FileOps
-open X509Util
 
-let verbose = ref false
-let output_dir = ref ""
+let data_dir = ref ""
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
-  mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
-  mkopt (Some 'o') "output-dir" (StringVal output_dir) "set the output directory (isolated certs + real links)";
+  mkopt (Some 'o') "data-dir" (StringVal data_dir) "set the data directory";
 ]
 
 let component_by_id = Hashtbl.create 1000
@@ -44,46 +40,37 @@ let merge_components cid1 cid2 =
 
     
   
-let read_csv csvname =
-  let f = open_in csvname in
-  let rec handle_line f =
-    let line = try Some (input_line f) with End_of_file -> None in
-    match line with
-    | None -> close_in f
-    | Some l ->
-      match List.map unquote (string_split ':' l) with
-      | [subject_h; issuer_h] ->
-        if subject_h <> issuer_h then begin
-          match search subject_h, search issuer_h with
-          | None, None -> create_new_component subject_h [subject_h; issuer_h]
-          | Some cid, None | None, Some cid -> add_to_component cid [subject_h; issuer_h]
-          | Some cid1, Some cid2 ->
-            if cid1 == cid2
-            then add_to_component cid1 [subject_h; issuer_h]
-            else merge_components cid1 cid2
-        end else begin
-          match search subject_h with
-          | None -> create_new_component subject_h [subject_h]
-          | Some _ -> ()
-        end;
-        handle_line f
-      | _ -> failwith ("Invalid line (" ^ (quote_string l) ^ ")")
-  in
-  handle_line f
+let handle_link ops = function
+  | [subject_h; issuer_h] ->
+    if subject_h <> issuer_h then begin
+      match search subject_h, search issuer_h with
+      | None, None -> create_new_component subject_h [subject_h; issuer_h]
+      | Some cid, None | None, Some cid -> add_to_component cid [subject_h; issuer_h]
+      | Some cid1, Some cid2 ->
+        if cid1 == cid2
+        then add_to_component cid1 [subject_h; issuer_h]
+        else merge_components cid1 cid2
+    end else begin
+      match search subject_h with
+      | None -> create_new_component subject_h [subject_h]
+      | Some _ -> ()
+    end;
+  | _ -> raise (InvalidNumberOfFields 2)
 
 
 let _ =
-  let csv_files = parse_args ~progname:"computeComponents" options Sys.argv in
+  let csv_files = match parse_args ~progname:"computeComponents" options Sys.argv with
+    | [] -> ["links"]
+    | l -> l
+  in
   try
-    let out_ops = prepare_data_dir !output_dir in
-    List.iter read_csv csv_files;
+    let ops = prepare_data_dir !data_dir in
+    List.iter (fun csv -> ops.iter_lines csv (handle_link ops)) csv_files;
     print_string "N_components: ";
     print_int (Hashtbl.length component_by_id);
     print_newline ();
     let print_cert h _ = print_endline h in
     let print_component _ c = print_int (Hashtbl.length c); print_newline (); Hashtbl.iter print_cert c; print_newline () in
     Hashtbl.iter print_component component_by_id;
-    out_ops.close_all_files ()
-  with
-    | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
-    | e -> prerr_endline (Printexc.to_string e); exit 1
+    ops.close_all_files ()
+  with e -> prerr_endline (Printexc.to_string e); exit 1
