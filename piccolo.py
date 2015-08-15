@@ -147,25 +147,25 @@ def get_certs(sup_joins, conditions, args, title, group_by_list = []):
 @app.route('/certs/<certhash>')
 @app.route('/certs/by-hash/<certhash>')
 def cert_by_hash(certhash):
-    return get_certs ([], ["certs.hash LIKE ?"], [certhash + "%"], certhash)
+    return get_certs ([], ["certs.hash = ?"], [certhash], certhash)
 
 @app.route('/certs/by-subject/<subject>')
 def cert_by_subject(subject):
-    return get_certs ([], ["dn_s.name LIKE ?"], ["%" + subject + "%"], "subject=%s" % subject)
+    return get_certs ([], ["dn_s.name = ?"], [subject], "subject=%s" % subject)
 
 @app.route('/certs/by-subject-hash/<subject_hash>')
 def cert_by_subject_hash(subject_hash):
-    return get_certs ([], ["certs.subject_hash LIKE ?"], [subject_hash + "%"], "subject_hash=%s" % subject_hash)
+    return get_certs ([], ["certs.subject_hash = ?"], [subject_hash], "subject_hash=%s" % subject_hash)
 
 @app.route('/certs/by-https-name/<name>')
 def cert_by_https_name(name):
     return get_certs (["names on names.cert_hash = certs.hash"],
-                      ["names.name LIKE ?"], ["%" + name + "%"], name, ["certs.hash"])
+                      ["names.name = ?"], [name], name, ["certs.hash"])
 @app.route('/certs/by-https-name/<type>/<name>')
 def cert_by_https_name_bis(type, name):
     return get_certs (["names on names.cert_hash = certs.hash"],
-                      ["names.type = ?", "names.name LIKE ?"],
-                      [type, "%" + name + "%"], "%s:%s" % (type, name), ["certs.hash"])
+                      ["names.type = ?", "names.name = ?"],
+                      [type, name], "%s:%s" % (type, name), ["certs.hash"])
 
 @app.route('/certs/by-exact-https-name/<name>')
 def cert_by_exact_https_name(name):
@@ -271,13 +271,13 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
 @app.route('/chains/<chainhash>')
 @app.route('/chains/by-hash/<chainhash>')
 def chain_by_hash(chainhash):
-    return get_chains ([], ["built_chains.chain_hash LIKE ?", "built_chains.built_chain_number = ?"],
-                       [chainhash + "%", 0], chainhash)
+    return get_chains ([], ["built_chains.chain_hash = ?", "built_chains.built_chain_number = ?"],
+                       [chainhash, 0], chainhash)
 
 @app.route('/chains/by-hash/<chainhash>/<int:pos>')
 def chain_by_hash_and_pos(chainhash, pos):
-    return get_chains ([], ["built_chains.chain_hash LIKE ?", "built_chains.built_chain_number = ?"],
-                       [chainhash + "%", pos], "%s - %d" % (chainhash, pos))
+    return get_chains ([], ["built_chains.chain_hash = ?", "built_chains.built_chain_number = ?"],
+                       [chainhash, pos], "%s - %d" % (chainhash, pos))
 
 @app.route('/chains/by-ip/<ip>')
 def chain_by_ip(ip):
@@ -297,8 +297,8 @@ def chain_by_subject_in_chain(subject):
                          "and bl.built_chain_number = built_chains.built_chain_number",
                        "certs as blc on blc.hash = bl.cert_hash",
                        "dns as bldns on bldns.hash = blc.subject_hash"],
-                      ["bldns.name LIKE ?", "built_chains.built_chain_number = ?"],
-                      ["%" + subject + "%", 0], subject, ["bl.chain_hash"])
+                      ["bldns.name = ?", "built_chains.built_chain_number = ?"],
+                      [subject, 0], subject, ["bl.chain_hash"])
 
 # TODO: validite
 
