@@ -186,52 +186,51 @@ create index unused_certs_cert_idx on unused_certs (cert_hash);
 
 
 -- Transitive links computation (should not be done on a big campaign)
-
-insert into transitive_links
-  select issuer_hash, subject_hash, 0 from links
-  where issuer_hash = subject_hash;
-
-insert into transitive_links
-  select issuer_hash, subject_hash, 1 from links
-  where issuer_hash != subject_hash;
-
-
-insert or ignore into transitive_links
-  select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
-  from transitive_links tl1, transitive_links tl2
-  where tl1.subject_hash = tl2.issuer_hash;
-
-insert or ignore into transitive_links
-  select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
-  from transitive_links tl1, transitive_links tl2
-  where tl1.subject_hash = tl2.issuer_hash;
-
-insert or ignore into transitive_links
-  select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
-  from transitive_links tl1, transitive_links tl2
-  where tl1.subject_hash = tl2.issuer_hash;
-
-insert or ignore into transitive_links
-  select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
-  from transitive_links tl1, transitive_links tl2
-  where tl1.subject_hash = tl2.issuer_hash;
-
-insert or ignore into transitive_links
-  select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
-  from transitive_links tl1, transitive_links tl2
-  where tl1.subject_hash = tl2.issuer_hash;
-
-insert or ignore into transitive_links
-  select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
-  from transitive_links tl1, transitive_links tl2
-  where tl1.subject_hash = tl2.issuer_hash;
-
-select count(*) from transitive_links;
-
-insert or ignore into transitive_links
-  select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
-  from transitive_links tl1, transitive_links tl2
-  where tl1.subject_hash = tl2.issuer_hash;
-
-select count(*) from transitive_links;
-
+--
+-- insert into transitive_links
+--   select issuer_hash, subject_hash, 0 from links
+--   where issuer_hash = subject_hash;
+--
+-- insert into transitive_links
+--   select issuer_hash, subject_hash, 1 from links
+--   where issuer_hash != subject_hash;
+--
+--
+-- insert or ignore into transitive_links
+--   select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
+--   from transitive_links tl1, transitive_links tl2
+--   where tl1.subject_hash = tl2.issuer_hash;
+--
+-- insert or ignore into transitive_links
+--   select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
+--   from transitive_links tl1, transitive_links tl2
+--   where tl1.subject_hash = tl2.issuer_hash;
+--
+-- insert or ignore into transitive_links
+--   select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
+--   from transitive_links tl1, transitive_links tl2
+--   where tl1.subject_hash = tl2.issuer_hash;
+--
+-- insert or ignore into transitive_links
+--   select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
+--   from transitive_links tl1, transitive_links tl2
+--   where tl1.subject_hash = tl2.issuer_hash;
+--
+-- insert or ignore into transitive_links
+--   select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
+--   from transitive_links tl1, transitive_links tl2
+--   where tl1.subject_hash = tl2.issuer_hash;
+--
+-- insert or ignore into transitive_links
+--   select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
+--   from transitive_links tl1, transitive_links tl2
+--   where tl1.subject_hash = tl2.issuer_hash;
+--
+-- select count(*) from transitive_links;
+--
+-- insert or ignore into transitive_links
+--   select tl1.issuer_hash, tl2.subject_hash, tl1.distance + tl2.distance
+--   from transitive_links tl1, transitive_links tl2
+--   where tl1.subject_hash = tl2.issuer_hash;
+--
+-- select count(*) from transitive_links;
