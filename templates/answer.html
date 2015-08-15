@@ -1,0 +1,35 @@
+<html>
+  <head>
+    <title>{{ title | escape }}</title>
+  </head>
+  <body>
+    <h1>{{ title | escape }}</h1>
+
+    <table border="1">
+      <tr>
+        <th>Name</th>
+        <td>{{ answer.name | escape }}</td>
+      </tr>
+      <tr>
+        <th>IP</th>
+        <td>{{ answer.ip | escape }}</td>
+      </tr>
+      <tr>
+        <th>Port</th>
+        <td>{{ answer.port | escape }}</a></td>
+      </tr>
+      <tr>
+        <th>Timestamp</th>
+	<td>{{ answer.timestamp_str | escape }}</td>
+      </tr>
+      <tr>
+        <th>Answer Type</th>
+	<td>{{ answer.type_str | escape }}</td>
+      </tr>
+      <tr>
+        <th>Certificate chain</th>
+        <td><a href="{{ '/chains/by-hash/' + answer.chain_hash + '/0' }}">{{ answer.chain_hash }}</a></td>
+      </tr>
+
+  </body>
+</html>

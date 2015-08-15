@@ -303,6 +303,61 @@ def chain_by_subject_in_chain(subject):
 # TODO: validite
 
 
+def tls_version(v):
+    if v == 2:
+        return "SSLv2"
+    elif v == 768:
+        return "SSLv3"
+    elif v == 769:
+        return "TLS 1.0"
+    elif v == 770:
+        return "TLS 1.1"
+    elif v == 771:
+        return "TLS 1.2"
+    else:
+        return "Unknown TLS version (%4.4x)" % v
+
+def get_answers(joins, conditions, args, title, group_by_list = []):
+    fields = ["answers.name as name", "ip", "port",
+              "timestamp", "chain_hash",
+              "answer_type", "answers.version as version",
+              "ciphersuite", "alert_level", "alert_type"]
+    tables = ["answers"]
+    rv = query_db (fields, tables, joins, conditions, args, group_by = group_by_list)
+    if rv:
+        if len(rv) == 1:
+            answer = rv[0]
+
+            answer["timestamp_str"] = time_str (int(answer["timestamp"]))
+
+            if answer['answer_type'] == 0:
+                answer['type_str'] = "Empty"
+            elif answer['answer_type'] == 1:
+                answer['type_str'] = "Junk"
+            elif answer['answer_type'] == 10:
+                answer['type_str'] = "SSLv2 Alert (%s)" % answer['alert_type']
+            elif answer['answer_type'] == 11:
+                answer['type_str'] = "%s Alert (%s, %s)" % (tls_version (answer['version']), answer['alert_level'], answer['alert_type'])
+            elif answer['answer_type'] == 20:
+                answer['type_str'] = "SSLv2 Handshake (%s)" % answer['ciphersuite']
+            elif answer['answer_type'] == 21:
+                answer['type_str'] = "%s Handshake (%s)" % (tls_version (answer['version']), answer['ciphersuite'])
+            else:
+                answer['type_str'] = "Unexpected type (%s)" % answer['answer_type']
+
+            return render_template ("answer.html", answer=answer, title=title)
+        else:
+            abort(404) #return render_template ("certificates.html", certs = rv, title = title)
+    else:
+        abort(404)
+
+@app.route('/answers/<cid>/by-ip/<ip>')
+def answer_by_ip(cid, ip):
+    return get_answers ([], ["answers.ip = ?", "answers.campaign = ?"], [ip, cid], "Answer(s) from %s in campaign %s" % (ip, cid))
+#    return get_certs (["names on names.cert_hash = certs.hash"],
+#                      ["names.name LIKE ?"], ["%" + name + "%"], name, ["certs.hash"])
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
