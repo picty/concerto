@@ -51,6 +51,12 @@ create table names(
        primary key (cert_hash, type, name)
 );
 
+create table unparsed_certs(
+       cert_hash text,
+       reason text,
+       primary key (cert_hash)
+);
+
 create table links(
        subject_hash text,
        issuer_hash text,
@@ -152,6 +158,8 @@ create index certs_issuer_idx on certs (issuer_hash);
 
 create index dns_hash_idx on dns (hash);
 create index dns_name_idx on dns (name);
+
+create index unparsed_certs_idx on unparsed_certs (cert_hash);
 
 create index names_cert_idx on names (cert_hash);
 create index names_name_idx on names (type, name);
