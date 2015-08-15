@@ -1,9 +1,4 @@
 = Next steps =
- - Add a tool to inject stimuli
- - Add a table stimuli/campaign
- - Add a way to link a campaign to a stimulus
- - Import de ce qui vient de scans.io
- - Add checks to verify the conformity of an answer to the emitted client_hello
  - Add a tool to probe server with a given client_hello
  - Add a tool to retrieve CRLs
  - Rewrite piccolo (js, limit some stuff when it's too long)
@@ -64,6 +59,10 @@ Campaigns
  - Proper support for multiple A records when resolving names
  - Add tools to probe a list (adapt probe_server)
  - Add tools to extract IPs and names from a database, possibly subject to some conditions (campaign id)
+ - Add a tool to inject stimuli
+ - Add a table stimuli/campaign
+ - Add a way to link a campaign to a stimulus
+ - Add checks to verify the conformity of an answer to the emitted client_hello
 
 AnswerDump -> CSV
  - Handle warning-level "Unrecognized name" alerts preceding valid handshake messages
