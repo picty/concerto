@@ -1,3 +1,5 @@
+-- Table creation
+
 create table answers(
        campaign int,
        ip text,
@@ -49,9 +51,16 @@ create table names(
        primary key (cert_hash, type, name)
 );
 
-create table links (
+create table links(
        subject_hash text,
        issuer_hash text,
+       primary key (issuer_hash, subject_hash)
+);
+
+create table transitive_links(
+       issuer_hash text,
+       subject_hash text,
+       distance int,
        primary key (issuer_hash, subject_hash)
 );
 
@@ -109,6 +118,8 @@ create table rated_chains(
 );
 
 
+-- Import
+
 .mode list
 .separator :
 .import answers.csv answers
@@ -125,13 +136,47 @@ create table rated_chains(
 .import rated_chains.csv rated_chains
 
 
+-- Indexes
 
-create table transitive_links (
-       issuer_hash text,
-       subject_hash text,
-       distance int,
-       primary key (issuer_hash, subject_hash)
-);
+create index answers_ip_idx on answers (campaign, ip);
+--create index answers_name_idx on answers (campaign, name);
+create index answers_chain_idx on answers (chain_hash);
+
+create index chains_hash_idx on chains (hash);
+create index chains_cert_idx on chains (cert_hash);
+
+create index certs_hash_idx on certs (hash);
+create index certs_subject_idx on certs (subject_hash);
+create index certs_issuer_idx on certs (issuer_hash);
+
+create index dns_hash_idx on dns (hash);
+create index dns_name_idx on dns (name);
+
+create index names_cert_idx on names (cert_hash);
+create index names_name_idx on names (type, name);
+
+create index links_issuer_idx on links (issuer_hash);
+create index links_subject_idx on links (subject_hash);
+
+--create index transitive_links_idx
+
+create index built_chains_n_idx on built_chains (chain_hash, built_chain_number);
+
+create index built_links_n_idx on built_links (chain_hash, built_chain_number);
+create index built_links_cert_idx on built_links (cert_hash);
+create index built_links_posinmsg_idx on built_links (position_in_msg);
+
+create index unused_certs_n_idx on unused_certs (chain_hash, built_chain_number);
+create index unused_certs_cert_idx on unused_certs (cert_hash);
+
+--create index trusted_certs_idx
+
+--create index trusted_chains_idx
+
+--create index rated_chains_idx
+
+
+-- Transitive links computation (should not be done on a big campaign)
 
 insert into transitive_links
   select issuer_hash, subject_hash, 0 from links
