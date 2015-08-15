@@ -14,9 +14,10 @@ error () {
 
 handle_ret_code () {
     if [ "$?" = "0" ]; then
-       echo " OK"
+       echo "OK"
+       echo
     else
-        echo " NOK"
+        echo "NOK"
         exit 1
     fi
 }
@@ -26,40 +27,40 @@ handle_ret_code () {
 # which piatto > /dev/null || error "piatto executable can not be found."
 
 
-echo -n "Extracting answers..."
-"$BIN_DIR/injectAnswerDump" -d "$DATA_DIR" "$ANSWER_DUMP" 2> /dev/null
+echo "= Extracting answers ="
+time "$BIN_DIR/injectAnswerDump" -d "$DATA_DIR" "$ANSWER_DUMP" 2> /dev/null
 handle_ret_code
 
-echo -n "Parsing certs..."
-"$BIN_DIR/parseCerts" -d "$DATA_DIR" $( for i in $(seq 0 255); do printf "%2.2x " $i; done ) 2> /dev/null
+echo "= Parsing certs ="
+time "$BIN_DIR/parseCerts" -d "$DATA_DIR" $( for i in $(seq 0 255); do printf "%2.2x " $i; done ) 2> /dev/null
 handle_ret_code
 
-echo -n "Preparing possible links..."
-"$BIN_DIR/prepareLinks" -d "$DATA_DIR" 2> /dev/null
+echo "= Preparing possible links ="
+time "$BIN_DIR/prepareLinks" -d "$DATA_DIR" 2> /dev/null
 handle_ret_code
 
-echo -n "Checking links..."
-"$BIN_DIR/checkLinks" -d "$DATA_DIR" 2> /dev/null
+echo "= Checking links ="
+time "$BIN_DIR/checkLinks" -d "$DATA_DIR" 2> /dev/null
 handle_ret_code
 rm -f "$DATA_DIR"/possible_links.csv
 
-echo -n "Building chains..."
-"$BIN_DIR/buildChains" -d "$DATA_DIR" 2> /dev/null
+echo "= Building chains ="
+time "$BIN_DIR/buildChains" -d "$DATA_DIR" 2> /dev/null
 handle_ret_code
 
 if [ "$*" = "" ]; then
     touch "$DATA_DIR/trusted_certs.csv" "$DATA_DIR/trusted_chains.csv"
     touch "$DATA_DIR/rated_chains.csv"
 else
-    echo -n "Flag trusted certs..."
-    "$BIN_DIR/flagTrust" -d "$DATA_DIR" --der "$@" 2> /dev/null
+    echo "= Flag trusted certs "
+    time "$BIN_DIR/flagTrust" -d "$DATA_DIR" --der "$@" 2> /dev/null
     handle_ret_code
 
-    echo -n "Rate chains..."
-    "$BIN_DIR/rateChains" -d "$DATA_DIR" 2> /dev/null
+    echo "= Rate chains ="
+    time "$BIN_DIR/rateChains" -d "$DATA_DIR" 2> /dev/null
     handle_ret_code
 fi
 
-echo -n "Injecting data into the database..."
-cat "$BIN_DIR/db.txt" | { cd "$DATA_DIR"; sqlite3 "db.sql" &> /dev/null; }
+echo "Injecting data into the database..."
+cat "$BIN_DIR/db.txt" | { cd "$DATA_DIR"; time sqlite3 "db.sql" &> /dev/null; }
 handle_ret_code

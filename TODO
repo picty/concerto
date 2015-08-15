@@ -88,3 +88,6 @@ Website
  - Add support to filter by campaign
  - Add support to only show certain parts of the HTML and/or limit the depth of the queries
  - Use Bootstrap to render the results properly
+
+Maestro
+ - Provide a finer-grain timing of db operations
