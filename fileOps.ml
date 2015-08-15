@@ -168,33 +168,9 @@ let prepare_data_dir data_dir =
 
   let list_csv_files () =
     list_dir [check_file_kind Unix.S_REG; check_extension ".csv"] data_dir
+  in
 
-  (* TODO: Factor the two following functions? *)
-  and iter_lines csv_name line_handler =
-    let fd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_RDONLY; Unix.O_CREAT] 0o644 in
-    Unix.lockf fd Unix.F_RLOCK 0;
-    let f = Unix.in_channel_of_descr fd in
-    let rec handle_line f =
-      let line = try Some (input_line f) with End_of_file -> None in
-      match line with
-      | None -> close_in f
-      | Some l ->
-         begin
-           try
-             line_handler (List.map unquote (string_split ':' l));
-           with
-           | InvalidNumberOfFields n ->
-              close_in f;
-              failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (quote_string l))
-           | e ->
-              close_in f;
-              raise e
-         end;
-         handle_line f
-
-    in
-    handle_line f
-  and iter_lines_accu csv_name line_handler initial_accu =
+  let iter_lines_accu csv_name line_handler initial_accu =
     let fd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_RDONLY; Unix.O_CREAT] 0o644 in
     Unix.lockf fd Unix.F_RLOCK 0;
     let f = Unix.in_channel_of_descr fd in
@@ -217,8 +193,13 @@ let prepare_data_dir data_dir =
          handle_line new_accu f
     in
     handle_line initial_accu f
+  in
+  let iter_lines csv_name line_handler =
+    let modified_handler () = line_handler
+    in iter_lines_accu csv_name modified_handler ()
+  in
 
-  and check_key_freshness csv_name key =
+  let check_key_freshness csv_name key =
     let _, keys = open_wfile csv_name in
     not (Hashtbl.mem keys key)
   and write_line csv_name key line =
