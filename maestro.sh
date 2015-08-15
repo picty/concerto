@@ -41,6 +41,7 @@ handle_ret_code
 echo -n "Checking links..."
 "$BIN_DIR/checkLinks" -d "$DATA_DIR" 2> /dev/null
 handle_ret_code
+rm -f "$DATA_DIR"/possible_links.csv
 
 echo -n "Building chains..."
 "$BIN_DIR/buildChains" -d "$DATA_DIR" 2> /dev/null
@@ -48,15 +49,16 @@ handle_ret_code
 
 if [ "$*" = "" ]; then
     touch "$DATA_DIR/trusted_certs.csv" "$DATA_DIR/trusted_chains.csv"
+    touch "$DATA_DIR/rated_chains.csv"
 else
     echo -n "Flag trusted certs..."
     "$BIN_DIR/flagTrust" -d "$DATA_DIR" --der "$@" 2> /dev/null
     handle_ret_code
-fi
 
-echo -n "Rate chains..."
-"$BIN_DIR/rateChains" -d "$DATA_DIR" 2> /dev/null
-handle_ret_code
+    echo -n "Rate chains..."
+    "$BIN_DIR/rateChains" -d "$DATA_DIR" 2> /dev/null
+    handle_ret_code
+fi
 
 echo -n "Injecting data into the database..."
 cat "$BIN_DIR/db.txt" | { cd "$DATA_DIR"; sqlite3 "db.sql" &> /dev/null; }
