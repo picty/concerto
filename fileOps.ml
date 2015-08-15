@@ -1,7 +1,3 @@
-open Parsifal
-
-
-
 (* TODO
  - Add load/build_index functions for binary files
  - Add an option to check whether a file exists before destroying it or appending it
@@ -35,14 +31,97 @@ let try_mkdir dirname mode =
   try Unix.mkdir dirname mode
   with _ -> ()
 
-(* TODO: Write a proper unquote... This one is safe but restricted. *)
-let unquote s =
-  let s_len = String.length s in
-  if s_len < 2 then failwith "unquote: invalid quoted string";
-  if s.[0] <> '"' || s.[s_len - 1] <> '"' then failwith "unquote: string is not quoted";
-  let result = String.sub s 1 (s_len - 2) in
-  try ignore (String.index result '"'); failwith "unquote: too many quotes!"
-  with Not_found -> result
+
+(* The following functions (quote/unquote) are hackish, since sqlite
+   does not seem to handle properly binary entries, and uses "" to
+   escape quotes. *)
+
+let quote_csv_field s =
+  let n = String.length s in
+  let res = Buffer.create (2 * n) in
+
+  let mk_two_char c =
+    Buffer.add_char res '\\';
+    Buffer.add_char res c
+  in
+  let write_char c =
+    match c with
+      | '\n' -> mk_two_char 'n'
+      | '\t' -> mk_two_char 't'
+      | '\\' -> mk_two_char '\\'
+      | '"' -> Buffer.add_char res '"'; Buffer.add_char res '"'
+      | c ->
+	let x = int_of_char c in
+	if x >= 32 && x < 128
+	then Buffer.add_char res c
+	else begin
+	  mk_two_char 'x';
+	  Buffer.add_char res Parsifal.hexa_char.[x lsr 4];
+	  Buffer.add_char res Parsifal.hexa_char.[x land 15]
+	end
+  in
+  Buffer.add_char res '"';
+  for i = 0 to (n-1) do
+    write_char s.[i]
+  done;
+  Buffer.add_char res '"';
+  Buffer.contents res
+
+let quote_csv_line line =
+  String.concat ":" (List.map quote_csv_field line)
+
+
+let unquote_csv_line l =
+  let s_len = String.length l in
+
+  let rec expecting_opening_quotes fields i =
+    if i >= s_len
+    then failwith "csv_unquote: unexpected colon at the end of line"
+    else if l.[i] != '"'
+    then failwith "csv_unquote: expected quote after colon"
+    else inside_quote fields (Buffer.create 10) (i+1)
+  and inside_quote fields buf i =
+    if i >= s_len
+    then failwith "csv_unquote: missing final quote"
+    else match l.[i] with
+      | '"' ->
+        if (i = s_len + 2) && (l.[i+1] = '"')
+        then begin
+          Buffer.add_char buf '"';
+          inside_quote fields buf (i+2)
+        end
+        else expecting_colon_or_eol ((Buffer.contents buf)::fields) (i+1)
+      | '\\' ->
+        if i < s_len + 2 then begin
+          let next_i = match l.[i+1] with
+            | 'n' -> Buffer.add_char buf '\n'; i+2
+            | 't' -> Buffer.add_char buf '\t'; i+2
+            | '\\' -> Buffer.add_char buf '\\'; i+2
+            | 'x' ->
+              if i < s_len + 4 then begin
+                match Parsifal.reverse_hex_chars.(int_of_char l.[i+2]),
+                      Parsifal.reverse_hex_chars.(int_of_char l.[i+3]) with
+                | -1, _ | _, -1 -> failwith "csv_unquote: invalid hex char"
+                | a, b -> Buffer.add_char buf (char_of_int ((a lsl 4) lor b)); i+4
+              end else failwith "csv_unquote: unexpected end of line"
+            | _ -> failwith "csv_unquote: invalid char escape"
+          in inside_quote fields buf next_i
+        end else failwith "csv_unquote: unexpected end of line"
+      | c ->
+        let x = int_of_char c in
+        if x >= 32 && x < 128
+        then Buffer.add_char buf c
+        else failwith "csv_unquote: invalid non-ASCII character";
+        inside_quote fields buf (i+1)
+  and expecting_colon_or_eol fields i =
+    if i >= s_len
+    then List.rev fields
+    else if l.[i] != ':'
+    then failwith "csv_unquote: expected colon or end of line"
+    else expecting_opening_quotes fields (i+1)
+  in
+
+  expecting_opening_quotes [] 0
 
 
 let list_dir filter_funs dirname =
@@ -181,11 +260,11 @@ let prepare_data_dir data_dir =
       | Some l ->
          let new_accu =
            try
-             line_handler accu (List.map unquote (string_split ':' l))
+             line_handler accu (unquote_csv_line l)
            with
            | InvalidNumberOfFields n ->
               close_in f;
-              failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (quote_string l))
+              failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (Parsifal.quote_string l))
            | e ->
               close_in f;
               raise e
@@ -204,7 +283,7 @@ let prepare_data_dir data_dir =
     not (Hashtbl.mem keys key)
   and write_line csv_name key line =
     let f, keys = open_wfile csv_name in
-    output_string f (String.concat ":" (List.map quote_string line));
+    output_string f (quote_csv_line line);
     output_string f "\n";
     Hashtbl.replace keys key ()
 
