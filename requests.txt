@@ -1,0 +1,16 @@
+= Number of trusted chains =
+select count(distinct hash) from chains
+  join built_chains on built_chains.chain_hash=chains.hash
+  join trusted_chains on trusted_chains.chain_hash=chains.hash
+  where trust_flag="trusted" and n_transvalid < 3;
+
+select count(*) from chains;
+
+
+= Number of trusted IP =
+select count(distinct ip) from answers
+  join chains on answers.chain_hash=chains.hash,
+       trusted_chains on trusted_chains.chain_hash=chains.hash
+  where trust_flag="trusted";
+
+select count(ip) from answers;
