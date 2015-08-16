@@ -62,5 +62,7 @@ else
 fi
 
 echo "= Injecting data into the database ="
+mkdir "$DATA_DIR/tmp"
+export TMPDIR="$DATA_DIR/tmp"
 cat "$BIN_DIR/db.txt" | { cd "$DATA_DIR"; time sqlite3 "db.sql" &> /dev/null; }
 handle_ret_code
