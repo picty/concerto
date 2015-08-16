@@ -52,15 +52,15 @@ if [ "$*" = "" ]; then
     touch "$DATA_DIR/trusted_certs.csv" "$DATA_DIR/trusted_chains.csv"
     touch "$DATA_DIR/rated_chains.csv"
 else
-    echo "= Flag trusted certs "
+    echo "= Flaging trusted certs "
     time "$BIN_DIR/flagTrust" -d "$DATA_DIR" --der "$@" 2> /dev/null
     handle_ret_code
 
-    echo "= Rate chains ="
+    echo "= Rating chains ="
     time "$BIN_DIR/rateChains" -d "$DATA_DIR" 2> /dev/null
     handle_ret_code
 fi
 
-echo "Injecting data into the database..."
+echo "= Injecting data into the database ="
 cat "$BIN_DIR/db.txt" | { cd "$DATA_DIR"; time sqlite3 "db.sql" &> /dev/null; }
 handle_ret_code

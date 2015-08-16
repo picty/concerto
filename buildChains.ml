@@ -249,7 +249,7 @@ let handle_chains_file links certs_info ops =
 let _ =
   (* TODO: Check that this _ is [] *)
   let _ = parse_args ~progname:"buildChains" options Sys.argv in
-  if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
+  if !data_dir = "" then usage "buildChains" options (Some "Please provide a valid data directory");
   try
     let ops = prepare_data_dir !data_dir in
     let links = read_links ops

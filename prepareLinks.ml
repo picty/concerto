@@ -58,7 +58,7 @@ let _ =
     | [] -> ["certs"]
     | l -> l
   in
-  if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
+  if !data_dir = "" then usage "prepareLinks" options (Some "Please provide a valid data directory");
   try
     let ops = prepare_data_dir !data_dir in
     List.iter (fun csv -> ops.iter_lines csv add_line) csv_files;

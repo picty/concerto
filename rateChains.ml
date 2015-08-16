@@ -64,7 +64,7 @@ let rate_chain ops trusted_chains (chain_h, n) (complete, ordered, n_transvalid,
 let _ =
   (* TODO: Check that this _ is [] *)
   let _ = parse_args ~progname:"rateChains" options Sys.argv in
-  if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
+  if !data_dir = "" then usage "rateChains" options (Some "Please provide a valid data directory");
   try
     let ops = prepare_data_dir !data_dir in
     let chains = Hashtbl.create 1000

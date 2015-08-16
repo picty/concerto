@@ -112,7 +112,7 @@ let rec handle_one_file get_campaign ops input =
 
 let _ =
   let dump_files = parse_args ~progname:"injectAnswerDump" options Sys.argv in
-  if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
+  if !data_dir = "" then usage "injectAnswerDump" options (Some "Please provide a valid data directory");
   try
     let get_campaign = match !campaign_id with
       | None -> get_campaign_from_dump

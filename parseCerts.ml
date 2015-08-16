@@ -120,7 +120,7 @@ let handle_one_prefix ops prefix =
 let _ =
   (* TODO: Rewrite this when we have a proper list_all_files operation *)
   let prefixes = parse_args ~progname:"parseCerts" options Sys.argv in
-  if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
+  if !data_dir = "" then usage "parseCerts" options (Some "Please provide a valid data directory");
   try
     let ops = prepare_data_dir !data_dir in
     List.iter (handle_one_prefix ops) prefixes;
