@@ -11,15 +11,13 @@ create table answers(
        ciphersuite int,
        alert_level int,
        alert_type int,
-       chain_hash text,
-       primary key (campaign, ip, name)
+       chain_hash text
 );
 
 create table chains(
        hash text,
        position int,
-       cert_hash text,
-       primary key (hash, position)
+       cert_hash text
 );
 
 create table certs(
@@ -47,27 +45,23 @@ create table dns(
 create table names(
        cert_hash text,
        type text,
-       name text,
-       primary key (cert_hash, type, name)
+       name text
 );
 
 create table unparsed_certs(
        cert_hash text,
-       reason text,
-       primary key (cert_hash)
+       reason text
 );
 
 create table links(
        subject_hash text,
-       issuer_hash text,
-       primary key (issuer_hash, subject_hash)
+       issuer_hash text
 );
 
 create table transitive_links(
        issuer_hash text,
        subject_hash text,
-       distance int,
-       primary key (issuer_hash, subject_hash)
+       distance int
 );
 
 create table built_chains(
@@ -80,8 +74,7 @@ create table built_chains(
        n_unused int,
        not_before text,
        not_after text,
-       key_typesize text,
-       primary key (chain_hash, built_chain_number)
+       key_typesize text
 );
 
 create table built_links(
@@ -89,30 +82,26 @@ create table built_links(
        built_chain_number int,
        position_in_chain int,
        position_in_msg int,
-       cert_hash text,
-       primary key (chain_hash, built_chain_number, position_in_chain)
+       cert_hash text
 );
 
 create table unused_certs(
        chain_hash text,
        built_chain_number int,
        position_in_msg int,
-       cert_hash text,
-       primary key (chain_hash, built_chain_number, position_in_msg)
+       cert_hash text
 );
 
 
 create table trusted_certs(
        cert_hash text,
-       trust_flag text,
-       primary key (cert_hash, trust_flag)
+       trust_flag text
 );
 
 create table trusted_chains(
        chain_hash text,
        built_chain_number int,
-       trust_flag text,
-       primary key (chain_hash, built_chain_number, trust_flag)
+       trust_flag text
 );
 
 
@@ -120,8 +109,7 @@ create table rated_chains(
        chain_hash text,
        built_chain_number int,
        trust_flag text,
-       grade text,
-       primary key (chain_hash, built_chain_number, trust_flag)
+       grade text
 );
 
 
