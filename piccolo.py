@@ -360,4 +360,7 @@ def answer_by_ip(cid, ip):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    if len (sys.argv) == 3:
+        app.run(debug=True, host=sys.argv[2])
+    else:
+        app.run(debug=True)
