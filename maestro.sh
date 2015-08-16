@@ -11,8 +11,11 @@ BIN_DIR="$(dirname "$0")"
 DATA_DIR=
 TRUSTED_CAS=
 VERBOSE=
+NO_DATABASE=
+TRUST_FLAG=trusted
+MAX_TRANSVALID=3
 
-while getopts "d:C:D:v" option; do
+while getopts "d:C:D:vT:nt:" option; do
     case "$option" in
         d)
             DATA_DIR="$OPTARG"
@@ -25,6 +28,15 @@ while getopts "d:C:D:v" option; do
             ;;
         v)
             VERBOSE=1
+            ;;
+        T)
+            MAX_TRANSVALID="$OPTARG"
+            ;;
+        t)
+            TRUST_FLAG="$OPTARG"
+            ;;
+        n)
+            NO_DATABASE=1
             ;;
         *)
             error "Invalid option \"$option\""
@@ -45,7 +57,10 @@ if [ -n "$VERBOSE" ]; then
     echo
     echo -n "ANSWER_DUMPS ($#)="
     for i in "$@"; do echo -n "$i "; done
-    echo    
+    echo
+    echo "MAX_TRANSVALID=$MAX_TRANSVALID"
+    echo "TRUST_FLAG=$TRUST_FLAG"
+    echo "NO_DATABASE=$NO_DATABASE"
 fi
 
 
@@ -68,7 +83,7 @@ handle_ret_code
 
 if [ "$TRUSTED_CAS" != "" ]; then
     echo "= Injecting certs ="
-    "$BIN_DIR/inject" -d "$DATA_DIR" -t certs $TRUSTED_CAS
+    time "$BIN_DIR/inject" -d "$DATA_DIR" -t certs $TRUSTED_CAS
     handle_ret_code
 fi
 
@@ -86,7 +101,7 @@ handle_ret_code
 rm -f "$DATA_DIR"/possible_links.csv
 
 echo "= Building chains ="
-time "$BIN_DIR/buildChains" -d "$DATA_DIR" 2> /dev/null
+time "$BIN_DIR/buildChains" -d "$DATA_DIR" -T "$MAX_TRANSVALID" 2> /dev/null
 handle_ret_code
 
 if [ "$TRUSTED_CAS" = "" ]; then
@@ -94,16 +109,18 @@ if [ "$TRUSTED_CAS" = "" ]; then
     touch "$DATA_DIR/rated_chains.csv"
 else
     echo "= Flaging trusted certs "
-    time "$BIN_DIR/flagTrust" -d "$DATA_DIR" --der $TRUSTED_CAS 2> /dev/null
+    time "$BIN_DIR/flagTrust" -d "$DATA_DIR" -t "$TRUST_FLAG" --der $TRUSTED_CAS 2> /dev/null
     handle_ret_code
 
     echo "= Rating chains ="
-    time "$BIN_DIR/rateChains" -d "$DATA_DIR" 2> /dev/null
+    time "$BIN_DIR/rateChains" -d "$DATA_DIR" -t "$TRUST_FLAG" 2> /dev/null
     handle_ret_code
 fi
 
-echo "= Injecting data into the database ="
-mkdir "$DATA_DIR/tmp"
-export TMPDIR="$DATA_DIR/tmp"
-cat "$BIN_DIR/db.txt" | { cd "$DATA_DIR"; time sqlite3 "db.sql" &> /dev/null; }
-handle_ret_code
+if [ -z "$NO_DATABASE" ]; then
+    echo "= Injecting data into the database ="
+    mkdir "$DATA_DIR/tmp"
+    export TMPDIR="$DATA_DIR/tmp"
+    cat "$BIN_DIR/db.txt" | { cd "$DATA_DIR"; time sqlite3 "db.sql" &> /dev/null; }
+    handle_ret_code
+fi
