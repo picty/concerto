@@ -36,10 +36,18 @@ let options = [
 ]
 
 
-let read_links ops =
+(* It seems that the subjet lists associated to issuers can be very very long,
+   leading to stack overflows. This is why we choose here a different
+   structure from the simple Hashtbl in buildChains. *)
+let read_links_by_issuer ops =
   let links = Hashtbl.create 1000 in
   let read_links_aux = function
-    | [subject_h; issuer_h] -> Hashtbl.add links issuer_h subject_h
+    | [subject_h; issuer_h] ->
+      let l =
+        try Hashtbl.find links issuer_h
+        with Not_found -> []
+      in
+      Hashtbl.replace links issuer_h (subject_h::l)
     | _ -> raise (InvalidNumberOfFields 2)
   in
   ops.iter_lines "links" read_links_aux;
@@ -55,7 +63,11 @@ let rec update_trusted_certs trusted_certs links hashes =
     then next_hashes
     else begin
       Hashtbl.replace trusted_certs h ();
-      List.rev_append (Hashtbl.find_all links h) next_hashes
+      let new_hashes =
+        try Hashtbl.find links h
+        with Not_found -> []
+      in
+      List.rev_append new_hashes next_hashes
     end
   in
   let next_hashes = List.fold_left update_aux [] hashes in
@@ -75,7 +87,7 @@ let _ =
   try
     let cert_hashes = List.map extract_cert_hash certs in
     let ops = prepare_data_dir !data_dir in
-    let links = read_links ops in
+    let links = read_links_by_issuer ops in
     if !verbose then print_endline "Links loaded.";
 
     let trusted_certs = Hashtbl.create 1000 in
