@@ -13,6 +13,7 @@ type file_ops = {
   iter_lines_accu : 'a. string -> ('a -> string list -> 'a) -> 'a -> 'a;
 
   (* Write operations for CSV file *)
+  reload_keys : string -> (string list -> string) -> unit;
   check_key_freshness : string -> string -> bool;
   write_line : string -> string -> string list -> unit;
 
@@ -176,20 +177,46 @@ let prepare_data_dir data_dir =
 
   let open_wfiles = Hashtbl.create 10 in
 
+  let open_rfile csv_name =
+    let fd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_RDONLY; Unix.O_CREAT] 0o644 in
+    Unix.lockf fd Unix.F_RLOCK 0;
+    Unix.in_channel_of_descr fd
+  in
+
   let open_wfile csv_name =
     try
       Hashtbl.find open_wfiles csv_name
     with
       Not_found ->
         (* TODO: Here we do not guarantee anymore the absence of dupes, as soon as we append! *)
-        let fd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_WRONLY; Unix.O_APPEND; Unix.O_CREAT] 0o644 in
-        Unix.lockf fd Unix.F_LOCK 0;
-        let f = Unix.out_channel_of_descr fd in
+        let wrfd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_RDWR; Unix.O_APPEND; Unix.O_CREAT] 0o644 in
+        Unix.lockf wrfd Unix.F_LOCK 0;
+        let rdfd = Unix.dup wrfd in
+        let in_f = Unix.in_channel_of_descr rdfd in
+        let out_f = Unix.out_channel_of_descr wrfd in
         let keys = Hashtbl.create 100 in
-        Hashtbl.replace open_wfiles csv_name (f, keys);
-        f, keys
+        Hashtbl.replace open_wfiles csv_name (in_f, out_f, keys);
+        in_f, out_f, keys
   in
 
+  let rec iter_lines_aux accu line_handler f =
+    let line = try Some (input_line f) with End_of_file -> None in
+    match line with
+    | None -> close_in f; accu
+    | Some l ->
+       let new_accu =
+         try
+           line_handler accu (unquote_csv_line l)
+         with
+         | InvalidNumberOfFields n ->
+            close_in f;
+            failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (Parsifal.quote_string l))
+         | e ->
+            close_in f;
+            raise e
+       in
+       iter_lines_aux new_accu line_handler f
+  in
 
   (* Binary files operations *)
 
@@ -250,39 +277,26 @@ let prepare_data_dir data_dir =
   in
 
   let iter_lines_accu csv_name line_handler initial_accu =
-    let fd = Unix.openfile (data_dir ^ "/" ^ csv_name ^ ".csv") [Unix.O_RDONLY; Unix.O_CREAT] 0o644 in
-    Unix.lockf fd Unix.F_RLOCK 0;
-    let f = Unix.in_channel_of_descr fd in
-    let rec handle_line accu f =
-      let line = try Some (input_line f) with End_of_file -> None in
-      match line with
-      | None -> close_in f; accu
-      | Some l ->
-         let new_accu =
-           try
-             line_handler accu (unquote_csv_line l)
-           with
-           | InvalidNumberOfFields n ->
-              close_in f;
-              failwith ("Invalid number of fields (" ^ (string_of_int n) ^ " expected) in " ^ (Parsifal.quote_string l))
-           | e ->
-              close_in f;
-              raise e
-         in
-         handle_line new_accu f
-    in
-    handle_line initial_accu f
-  in
-  let iter_lines csv_name line_handler =
+    let f = open_rfile csv_name in
+    iter_lines_aux initial_accu line_handler f
+  and iter_lines csv_name line_handler =
+    let f = open_rfile csv_name in
     let modified_handler () = line_handler
-    in iter_lines_accu csv_name modified_handler ()
-  in
+    in iter_lines_aux () modified_handler f
 
-  let check_key_freshness csv_name key =
-    let _, keys = open_wfile csv_name in
+  and reload_keys csv_name key_computation_fun =
+    let f, _, keys = open_wfile csv_name in
+    ignore (seek_in f 0);
+    let line_handler () l =
+      let key = key_computation_fun l in
+      Hashtbl.replace keys key ()
+    in
+    iter_lines_aux () line_handler f
+  and check_key_freshness csv_name key =
+    let _, _, keys = open_wfile csv_name in
     not (Hashtbl.mem keys key)
   and write_line csv_name key line =
-    let f, keys = open_wfile csv_name in
+    let _, f, keys = open_wfile csv_name in
     output_string f (quote_csv_line line);
     output_string f "\n";
     Hashtbl.replace keys key ()
@@ -323,19 +337,18 @@ let prepare_data_dir data_dir =
     end
 
   and close_all_files () =
-    let close_file _ (f, _) = close_out f in
-    let close_binfile _ (in_f, out_f, _) =
+    let close_file _ (in_f, out_f, _) =
       close_in in_f;
       close_out out_f
     in
     Hashtbl.iter close_file open_wfiles;
     Hashtbl.clear open_wfiles;
-    Hashtbl.iter close_binfile open_binfiles;
+    Hashtbl.iter close_file open_binfiles;
     Hashtbl.clear open_binfiles
 
   in
   { list_csv_files; iter_lines; iter_lines_accu;
-    check_key_freshness; write_line;
+    reload_keys; check_key_freshness; write_line;
     list_filetypes; list_prefixes; list_files_by_prefix;
     read_file; dump_file;
     close_all_files; }
