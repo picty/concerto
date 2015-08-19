@@ -15,8 +15,10 @@ let handle_trusted_chain_line chain_sets = function
 
 let load_trusted_chains ops trust_flags =
   let chain_sets = Hashtbl.create 10 in
-  List.iter (fun trust_flag -> Hashtbl.add chain_sets trust_flag StringSet.empty) trust_flags;
-  ops.iter_lines "trusted_chains" (handle_trusted_chain_line chain_sets);
+  if trust_flags <> [] then begin
+    List.iter (fun trust_flag -> Hashtbl.add chain_sets trust_flag StringSet.empty) trust_flags;
+    ops.iter_lines "trusted_chains" (handle_trusted_chain_line chain_sets);
+  end;
   chain_sets
 
 

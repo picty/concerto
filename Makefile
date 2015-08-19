@@ -6,7 +6,7 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	parseCerts prepareLinks checkLinks \
 	removeIsolatedCerts computeComponents buildChains \
 	flagTrust rateChains \
-	globalStats versionStats
+	globalStats versionStats computeStats
 
 listCSVFiles_SRCS := fileOps.ml listCSVFiles.ml
 writeLine_SRCS := fileOps.ml writeLine.ml
@@ -34,6 +34,7 @@ rateChains_SRCS := fileOps.ml rateChains.ml
 
 globalStats_SRCS := fileOps.ml statOps.ml globalStats.ml
 versionStats_SRCS := fileOps.ml statOps.ml versionStats.ml
+computeStats_SRCS := fileOps.ml statOps.ml computeStats.ml
 
 # comment this line if not using camlp4
 # USE_CAMLP4 = yes
