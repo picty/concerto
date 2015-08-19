@@ -1,0 +1,59 @@
+.mode col
+.headers on
+
+select agg.campaign, agg.trust_flag,
+       answer_types.name, count, total, count * 100.0 / total as proportion
+  from stats_answertypes
+  join answer_types on answer_types.answer_type=stats_answertypes.answer_type,
+       (select campaign, trust_flag, sum(count) as total
+          from stats_answertypes
+          group by campaign, trust_flag
+       ) agg
+         on stats_answertypes.campaign = agg.campaign
+         and stats_answertypes.trust_flag = agg.trust_flag
+  order by agg.campaign ASC, agg.trust_flag ASC
+;
+
+
+select agg.campaign, agg.trust_flag,
+       tls_versions.name, count, total, count * 100.0 / total as proportion
+  from stats_versions
+  join tls_versions on tls_versions.version = stats_versions.version,
+       (select campaign, trust_flag, sum(count) as total
+          from stats_versions
+          group by campaign, trust_flag
+       ) agg
+         on stats_versions.campaign = agg.campaign
+         and stats_versions.trust_flag = agg.trust_flag
+  order by agg.campaign ASC, agg.trust_flag ASC
+;
+
+
+select agg.campaign, agg.trust_flag, stats_ciphersuites.ciphersuite,
+       tls_ciphersuites.name, tls_ciphersuites.kind,
+       count, total, count * 100.0 / total as proportion
+  from stats_ciphersuites
+  left join tls_ciphersuites on tls_ciphersuites.ciphersuite = stats_ciphersuites.ciphersuite,
+       (select campaign, trust_flag, sum(count) as total
+          from stats_ciphersuites
+          group by campaign, trust_flag
+       ) agg
+         on stats_ciphersuites.campaign = agg.campaign
+         and stats_ciphersuites.trust_flag = agg.trust_flag
+  order by agg.campaign ASC, agg.trust_flag ASC
+;
+
+
+select stats_ciphersuites.campaign, stats_ciphersuites.trust_flag,
+       tls_ciphersuites.kind, sum(count), total, sum(count) * 100.0 / total as proportion
+  from stats_ciphersuites
+  left join tls_ciphersuites on tls_ciphersuites.ciphersuite = stats_ciphersuites.ciphersuite,
+       (select campaign, trust_flag, sum(count) as total
+          from stats_ciphersuites
+          group by campaign, trust_flag
+       ) agg
+         on stats_ciphersuites.campaign = agg.campaign
+         and stats_ciphersuites.trust_flag = agg.trust_flag
+  group by stats_ciphersuites.campaign, stats_ciphersuites.trust_flag, tls_ciphersuites.kind
+  order by agg.campaign ASC, agg.trust_flag ASC
+;
