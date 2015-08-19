@@ -32,7 +32,7 @@ buildChains_SRCS := fileOps.ml buildChains.ml
 flagTrust_SRCS := fileOps.ml flagTrust.ml
 rateChains_SRCS := fileOps.ml rateChains.ml
 
-globalStats_SRCS := fileOps.ml globalStats.ml
+globalStats_SRCS := fileOps.ml statOps.ml globalStats.ml
 
 # comment this line if not using camlp4
 # USE_CAMLP4 = yes

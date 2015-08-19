@@ -9,6 +9,7 @@
 
 open Getopt
 open FileOps
+open StatOps
 
 let data_dir = ref ""
 
@@ -30,15 +31,11 @@ let update_count counts = function
          Hashtbl.replace counts campaign h;
          h
      in
-
-     begin
-       try Hashtbl.replace campaign_h answer_type ((Hashtbl.find campaign_h answer_type) + 1)
-       with Not_found -> Hashtbl.replace campaign_h answer_type 1
-     end
+     inc_in_hashtbl campaign_h answer_type
 
   | _ -> raise (InvalidNumberOfFields 11)
 
-let print_count_for_one_campaign campaign h =
+let print_counts_for_one_campaign campaign h =
   Printf.printf "= %d =\n" campaign;
   let total = Hashtbl.fold (fun _ n accu -> accu+n) h 0 in
   Printf.printf "Total: %10d\n" total;
@@ -53,7 +50,7 @@ let _ =
     let ops = prepare_data_dir !data_dir in
     let counts = Hashtbl.create 10 in
     ops.iter_lines "answers" (update_count counts);
-    Hashtbl.iter print_count_for_one_campaign counts;
+    Hashtbl.iter print_counts_for_one_campaign counts;
     ops.close_all_files ()
   with
     | e -> prerr_endline (Printexc.to_string e); exit 1
