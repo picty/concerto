@@ -2,6 +2,7 @@
 
    Inputs:
     - answers.csv
+    - trusted_chains.csv
 
    Option:
     - campaign id

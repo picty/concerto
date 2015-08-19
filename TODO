@@ -1,8 +1,21 @@
 = v1.0 milestone =
  - Put here all the TODOs to fix before releasing v1.0.
- - Write some doc
- - Write some script
+
+ - Document the different tools (beyond the dot file)
+ - Rewrite maestro to be more modular (Makefile? different options?)
+
+ - Add tools to manage certificate store (from ssl-campaigns)
  - Add support to probe a server easily
+ - Explicit implicit assumptions (buildChains relies on chains to be contiguous!)
+ - Add support for table versionning
+ - Add support for fileOps backend versionning (for the moment, we use csv+packs but there should be other backends)
+
+ - Improve -v on every program (to understand better some problems, some sizes)
+ - All these options should be factored and pushed into fileOps?
+ - Improve arg handling in general
+
+ - Bug: Why does injectAnswers open all files?
+ - Bug? Handle "FAILURE: TODO" and "FAILURE: SSLv3 PRF" in injectAD
 
 
 = Next steps =
@@ -20,15 +33,8 @@ sys     0m39.128s
  - test it!
  - add --skip-reloading-keys-for <string> => string list (use with caution)
 
- - Improve -v on every program (to understand better some problems, some sizes)
- - All these options should be factored and pushed into fileOps?
-
- - Bug: Why does injectAnswers open all files?
-
- - Add tools to manage certificate store
  - Add relevant indices for trusted_certs/trusted_chains/rated_chains
  - Rethink the data structures (Hashtbl should not have large lists, and we should use sets instead of Hashtbl when possible) + use a binary representation in OCaml for hashes (abstract type Hash.t)
- - Improve arg handling in general
 
  - Add a tool to probe server with a given client_hello
  - Add a tool to retrieve CRLs
@@ -44,7 +50,6 @@ sys     0m39.128s
  - Add options for parseCerts (-out-prefix) and for merge (-in-prefix) to allow parallel tools on the same directory
  - Find a way to handle transitive_links
  - Try it on a whole campaign and see what needs improvements!
- - Document the different tools (beyond the dot file)
 
 
 = Various TODO in concerto-ng =
