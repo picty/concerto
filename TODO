@@ -1,7 +1,25 @@
+= v1.0 milestone =
+ - Put here all the TODOs to fix before releasing v1.0.
+ - Write some doc
+ - Write some script
+ - Add support to probe a server easily
+
+
 = Next steps =
+ - Optimize flagTrust (it is long and uses a lot of memory!
+$ time ~/dev/research/concerto/flagTrust -t ev --der -d all-campaigns--max-transvalid-3/ 2014-03-mozilla-ev-certs/*
+real    29m53.423s
+user    22m10.792s
+sys     0m21.964s
+yeye@fry:/mnt/ssl-data-new/analysis/2015-05$ time ~/dev/research/concerto/flagTrust -t trusted --der -d all-campaigns--max-transvalid-3/ 2014-03-mozilla-trusted-certs/*
+real    83m12.053s
+user    24m18.924s
+sys     0m39.128s
+
  - use reload_keys in each program*
  - test it!
  - add --skip-reloading-keys-for <string> => string list (use with caution)
+
  - Improve -v on every program (to understand better some problems, some sizes)
  - All these options should be factored and pushed into fileOps?
 
