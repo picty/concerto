@@ -32,7 +32,7 @@ done
 shift $(($OPTIND - 1))
 
 
-sqlite3 "$DATA_DIR/db.sql" <<EOF
+sqlite3 "$DATA_DIR/stats-db.sql" <<EOF
 -- Table creation
 
 create table tls_ciphersuites(

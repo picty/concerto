@@ -1,6 +1,10 @@
 .mode col
 .headers on
 
+
+
+-- Global numbers on answer types
+
 select agg.campaign, agg.trust_flag,
        answer_types.name, count, total, count * 100.0 / total as proportion
   from stats_answertypes
@@ -15,6 +19,9 @@ select agg.campaign, agg.trust_flag,
 ;
 
 
+
+-- Negociated versions by campaign/trust_flag
+
 select agg.campaign, agg.trust_flag,
        tls_versions.name, count, total, count * 100.0 / total as proportion
   from stats_versions
@@ -28,6 +35,10 @@ select agg.campaign, agg.trust_flag,
   order by agg.campaign ASC, agg.trust_flag ASC
 ;
 
+
+
+
+-- Negociated suites by campaign/trust_flag
 
 select agg.campaign, agg.trust_flag, stats_ciphersuites.ciphersuite,
        tls_ciphersuites.name, tls_ciphersuites.kind,
@@ -44,6 +55,8 @@ select agg.campaign, agg.trust_flag, stats_ciphersuites.ciphersuite,
 ;
 
 
+-- Same thing, with the kind of suite (Obsolete, Weak, Acceptable, Strong)
+
 select stats_ciphersuites.campaign, stats_ciphersuites.trust_flag,
        tls_ciphersuites.kind, sum(count), total, sum(count) * 100.0 / total as proportion
   from stats_ciphersuites
@@ -55,5 +68,38 @@ select stats_ciphersuites.campaign, stats_ciphersuites.trust_flag,
          on stats_ciphersuites.campaign = agg.campaign
          and stats_ciphersuites.trust_flag = agg.trust_flag
   group by stats_ciphersuites.campaign, stats_ciphersuites.trust_flag, tls_ciphersuites.kind
+  order by agg.campaign ASC, agg.trust_flag ASC
+;
+
+
+
+-- Same thing, with the fact that the negociated ciphersuite has PFS
+
+select stats_ciphersuites.campaign, stats_ciphersuites.trust_flag,
+       tls_ciphersuites.pfs, sum(count), total, sum(count) * 100.0 / total as proportion
+  from stats_ciphersuites
+  left join tls_ciphersuites on tls_ciphersuites.ciphersuite = stats_ciphersuites.ciphersuite,
+       (select campaign, trust_flag, sum(count) as total
+          from stats_ciphersuites
+          group by campaign, trust_flag
+       ) agg
+         on stats_ciphersuites.campaign = agg.campaign
+         and stats_ciphersuites.trust_flag = agg.trust_flag
+  group by stats_ciphersuites.campaign, stats_ciphersuites.trust_flag, tls_ciphersuites.pfs
+  order by agg.campaign ASC, agg.trust_flag ASC
+;
+
+select stats_ciphersuites.campaign, stats_ciphersuites.trust_flag,
+       sum(count) * 100.0 / total as proportion
+  from stats_ciphersuites
+  left join tls_ciphersuites on tls_ciphersuites.ciphersuite = stats_ciphersuites.ciphersuite,
+       (select campaign, trust_flag, sum(count) as total
+          from stats_ciphersuites
+          group by campaign, trust_flag
+       ) agg
+         on stats_ciphersuites.campaign = agg.campaign
+         and stats_ciphersuites.trust_flag = agg.trust_flag
+  where tls_ciphersuites.pfs = 1
+  group by stats_ciphersuites.campaign, stats_ciphersuites.trust_flag
   order by agg.campaign ASC, agg.trust_flag ASC
 ;
