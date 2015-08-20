@@ -89,8 +89,8 @@ let rec handle_one_file get_campaign ops input =
          answer_type; version; ciphersuite; alert_level; alert_type;
          hexdump chain_hash];
 
-      if ops.check_key_freshness "chains" chain_hash then begin
-	List.iteri (fun i -> fun sc -> ops.write_line "chains" chain_hash
+      if ops.check_key_freshness "chains" (hexdump chain_hash) then begin
+	List.iteri (fun i -> fun sc -> ops.write_line "chains" (hexdump chain_hash)
 	  [hexdump chain_hash; string_of_int i; hexdump (hash_of_sc sc)]) unchecked_certs;
       end;
 
@@ -118,6 +118,7 @@ let _ =
       | None -> get_campaign_from_dump
       | Some id -> get_campaign_from_cmdline id
     and ops = prepare_data_dir !data_dir in
+    ops.reload_keys "chains" (List.hd);
     let open_files = function
       | [] -> input_of_channel ~verbose:(!verbose) "(stdin)" Lwt_io.stdin >>= fun x -> return [x]
       | _ -> Lwt_list.map_s input_of_filename dump_files

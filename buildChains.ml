@@ -2,7 +2,7 @@
 
    Inputs:
     - links.csv
-    - chains.csv
+    - chains.csv (certificates are expected to be contiguous!)
 
    Parameter:
     - max-transvalid certs
