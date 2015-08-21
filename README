@@ -1,38 +1,92 @@
-Concerto: a set of tools to extract, analyse and browse certificates and chains:
- - piatto, a Parsifal-based tool to extract certificates from answer dumps
+= Concerto =
 
- - chitarra, an OCaml tool to enrich data in the database
-
- - piccolo, a web server in Python/Flask to present the result
- - fagotto, a program to produce report
-
- - maestro, to wrap it up
+Concerto is a set of tools to extract, analyse and browse certificates
+and chains.
 
 
-Currently, we need to call some programs one after the other:
- - piatto-lite (*.dump -> answers.csv + chains.csv + raw/ [certs])
- - merge-certs (fusion des raw/certs/*)
- - parseCerts (certs/* -> certs.csv + dns.csv + names.csv + unparsed.csv
- - prepareLinks [Needs to see the whole certs.csv!]
+== Extraction and analysis tools =
+
+All the programs presented in this section are described (with their
+associated tables) in the doc/documentation.png image (obtained with
+"make -C doc" on a system with the dot tools).
+
+injectAnswerDump takes dump files and extract answer information
+(answer type, TLS version and ciphersuite, certificate chain hash), as
+well as chains and certificates.
+
+inject allows to directly inject binary files (e.g. trusted
+certificates).
+
+parseCerts parses all certificates to extract relevant fields in some
+tables (certs, dns and names).
+
+prepareLinks extracts all the possible links between certificates,
+using only information present in certs table.
+
+checkLinks checks the signature of possibleLinks to produce the table
+of the real links.
+
+buildChains tries and build all possible chains from the available
+data.
+
+flagTrust recursively flags trusted certs, starting from roots.
+
+rateChains grades the built chains, using trust information when
+available.
+
+maestro.sh is a script proposing to call the previous programs in the
+right order to provide a computed data-dir ready to use with piccolo.
 
 
+== More analysis tools (WIP) ==
 
-= Example on a campaign =
+removeIsolatedCerts is an obsolete tool to get the list of isolated
+certs (that is certificates not participating to any links).
 
-make -j 8 $( for i in 0[67]*/?/*.dump; do echo ${i/.dump/.piatto}; done )
+computeComponents is a work-in-progress tool to split certificates in
+connex components. This would be the first step leading to the
+transitive closure of the signed-by relation.
 
-~/dev/research/concerto/piatto-lite/mergeRawFiles -t certs -o common $(for x in 0[67]*/?/*.piatto; do echo -i $x; done) $(for i in $(seq 0 255); do printf "%2.2x " $i; done) -v
 
-for i in 0[45]*/?/*.piatto/raw/certs/*.pack; do rm -f $i; done
+== Certificate store handlers ==
 
-sort -u 0[45]*/?/*.piatto/chains.csv > chains.csv
+extract-certdata extracts trusted roots from NSS certdata.txt file.
 
-parseCerts -o parsed-certs -i common -t certs 00 01
+extract-ev-certdata.py extracts EV tags from NSS source.
 
-prepareLinks ...
 
-checkLinks
+== Statistical tools =
 
-buildChains
+globalStats extracts global figures on the known campaigns. It can
+also project those statistics on flagged IPs (introduced by flagTrust).
 
-gradeChains?
+versionStats gives statistics on TLS versions.
+
+computeStats is a generic tool to extract statistics on answer types,
+versions and ciphersuites. It can take trust flags into account.
+
+computeBehaviorStats is a work-in-progress to produce statistics
+concerning multiple campaigns at the same time. The idea is to
+correlate information related to a given IP contacted using different
+stimuli.
+
+
+== Low-level tools =
+
+To manipulate the data, the data-dir contains "tables" (currently
+implemented as CSV files) and "packs" (files used to store binary
+data). The following programs allow to operate the data-dir at a
+low-level:
+ - listCSVFiles
+ - writeLine
+ - dumpFile
+ - readFile
+ - listRawTypes
+ - listRawPrefixes
+ - listRawByPrefix
+ - listRawByType
+
+Moreover, two obsolete programs should be removed or rewritten to
+really be useful:
+ - mergeDirsa
+ - mergeRawFiles

@@ -1,0 +1,40 @@
+Installation instructions on Debian
+-----------------------------------
+Concerto currently depends on the following OCaml libraries:
+
+* Lwt
+* Calendar
+* Cryptokit
+* Parsifal (available at https://github.com/ANSSI-FR/parsifal)
+
+To compile Concerto, you also need the following tools:
+
+* Make
+* OCaml
+* OCaml-findlib
+* OCaml IDL
+
+Therefore, to compile Parsifal, you need to get Parsifal, and ensure
+you have the following packages installed:
+
+ * git
+ * make
+ * ocaml
+ * ocaml-findlib
+ * camlidl
+ * liblwt-ocaml-dev
+ * libcalendar-ocaml-dev
+ * libcryptokit-ocaml-dev
+
+When they are installed, you can type in the following commands:
+% cd <your_dev_dir>
+% git clone https://github.com/ANSSI-FR/concerto
+% cd concerto
+% make
+
+
+Notes
+-----
+
+The source code has been checked with Debian Jessie. In particular,
+the used OCaml version is 4.01.

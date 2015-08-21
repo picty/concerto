@@ -1,7 +1,6 @@
 = v1.0 milestone =
- - Put here all the TODOs to fix before releasing v1.0.
-
- - Document the different tools (beyond the dot file)
+ - Ensure concerto builds against the master branch on GitHub
+ - Write a micro-tutorial?
  - Rewrite maestro to be more modular (Makefile? different options?)
 
  - Add support to probe a server easily

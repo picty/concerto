@@ -1,5 +1,5 @@
 digraph concerto {
-  # Programs
+# Programs
   {
     node [shape=box, fontname="Courier-bold"];
     injectAnswerDump;
@@ -10,15 +10,10 @@ digraph concerto {
     buildChains;
     flagTrust;
     rateChains;
-  
-#    computeComponents;
-#    removeIsolatedCerts;
-
-    piccolo;
   }
 
 
-  # CSV
+# CSV
   {
     node [shape=parallelogram, style=diagonals];
     answers;
@@ -38,7 +33,7 @@ digraph concerto {
   }
 
 
-  # Given binary files
+# Given binary files
   {
     node [fillcolor=grey, style=filled];
     dump_files [label="answer dumps"];
@@ -46,7 +41,7 @@ digraph concerto {
     { rank=same; dump_files trusted_cert_files }
   }
 
-  # Produced binary files
+# Produced binary files
   {
     node [fillcolor=grey, style=rounded, style=filled]
     cert_files [label="certs"];
