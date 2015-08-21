@@ -4,7 +4,6 @@
  - Document the different tools (beyond the dot file)
  - Rewrite maestro to be more modular (Makefile? different options?)
 
- - Add tools to manage certificate store (from ssl-campaigns)
  - Add support to probe a server easily
  - Explicit implicit assumptions (buildChains relies on chains to be contiguous!)
  - Add support for table versionning

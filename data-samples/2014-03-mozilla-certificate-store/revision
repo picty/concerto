@@ -1,0 +1,5 @@
+parent: 162111:39faf812aaec FIREFOX_26_0_BUILD2 FIREFOX_26_0_RELEASE
+ Automated checkin: version bump for firefox 26.0 release. DONTBUILD CLOSED TREE a=release
+branch: GECKO260_2013120510_RELBRANCH
+commit: (clean)
+update: 1 new changesets (update)
