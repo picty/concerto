@@ -23,6 +23,7 @@ checkLinks
 removeIsolatedCerts
 computeComponents
 buildChains
+extract-certdata
 flagTrust
 rateChains
 globalStats

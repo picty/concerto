@@ -5,7 +5,7 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	injectAnswerDump inject \
 	parseCerts prepareLinks checkLinks \
 	removeIsolatedCerts computeComponents buildChains \
-	flagTrust rateChains \
+	extract-certdata flagTrust rateChains \
 	globalStats versionStats computeStats
 
 listCSVFiles_SRCS := fileOps.ml listCSVFiles.ml
@@ -29,6 +29,7 @@ checkLinks_SRCS := fileOps.ml checkLinks.ml
 removeIsolatedCerts_SRCS := fileOps.ml removeIsolatedCerts.ml
 computeComponents_SRCS := fileOps.ml computeComponents.ml
 buildChains_SRCS := fileOps.ml buildChains.ml
+extract-certdata_SRCS := extract-certdata.ml
 flagTrust_SRCS := fileOps.ml flagTrust.ml
 rateChains_SRCS := fileOps.ml rateChains.ml
 
