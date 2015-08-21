@@ -10,6 +10,7 @@ let set_action value = TrivialFun (fun () -> action := value)
 let verbose = ref false
 let set_verbose value = TrivialFun (fun () -> verbose := value)
 let output = ref ""
+let output_dir = ref ""
 
 let options = [
   mkopt (Some 'h') "help" Usage "Show this help message";
@@ -20,17 +21,40 @@ let options = [
   mkopt (Some 'd') "distrusted" (set_action Distrusted) "Dumps only distrusted certs";
   mkopt (Some 'v') "verbose" (set_verbose true) "Display more information";
   mkopt (Some 'o') "output" (StringVal output) "Output certificates to this file";
+  mkopt None "output-dir" (StringVal output_dir) "Output certificates to this directory (DER format)";
 ]
 
 module LabelSet = Set.Make(String)
 
-let dump_cert label value ~out =
+
+let dump_cert out label value =
   let buf = POutput.create () in
   let dump = dump_base64_container (HeaderInList ["CERTIFICATE"]) dump_binstring in
   dump buf value;
   POutput.add_char buf '\n';
   POutput.output_buffer out buf;
-  if !verbose = true then Printf.fprintf stderr "Dumped certificate %s\n" label
+  if !verbose then Printf.fprintf stderr "Dumped certificate %s\n" label
+
+let normalize s =
+  let n = String.length s in
+  let res =
+    if n > 2 && s.[0] = '"' && s.[n-1] = '"'
+    then String.sub s 1 (n-2)
+    else String.copy s
+  in
+  for i = 0 to (String.length res) - 1 do
+    let c = res.[i] in
+    let x = int_of_char c in
+    if (x < 33) || (x >= 128) || (c = '/')
+    then res.[i] <- '_'
+  done;
+  res
+
+let dump_cert_in_separate_file dir label value =
+  let f = open_out (dir ^ "/" ^ (normalize label) ^ ".der") in
+  output_string f value;
+  close_out f;
+  if !verbose then Printf.fprintf stderr "Dumped certificate %s\n" label
 
 
 let read_octal line =
@@ -49,7 +73,7 @@ type state = Trust | Cert
 
 let split_line line = Str.bounded_split (regexp "[ \t]+") line 3
 
-let handle_file filename ~out =
+let handle_file dump_cert_fun filename =
   let chan = open_in filename in
   let label = ref "" in
   let label_set = ref LabelSet.empty in
@@ -90,15 +114,22 @@ let handle_file filename ~out =
     done
   with End_of_file -> ();
   Hashtbl.iter (fun l c ->
-    if LabelSet.mem l !label_set then dump_cert l c ~out) certs;
+    if LabelSet.mem l !label_set then dump_cert_fun l c) certs;
   let total = Hashtbl.fold (fun l _ c -> if LabelSet.mem l !label_set then c + 1 else c) certs 0 in
   Printf.fprintf stderr "Dumped %d certificates\n" total
 
 
 let () =
   let filenames = parse_args ~progname:"certdata" options Sys.argv in
-  let out = match !output with
-  | "" -> stdout
-  | _  -> open_out !output
+  let dump_cert_fun = match !output, !output_dir with
+    | "", "" -> dump_cert stdout
+    | output_file, "" -> dump_cert (open_out output_file)
+    | "", output_dir ->
+       begin
+         try Unix.mkdir output_dir 0o755
+         with _ -> ()
+       end;
+       dump_cert_in_separate_file output_dir
+    | _, _ -> usage "certdata" options (Some "Please choose either an output file or an output dir")
   in
-  List.iter (handle_file ~out:out) filenames
+  List.iter (handle_file dump_cert_fun) filenames
