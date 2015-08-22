@@ -1,12 +1,13 @@
 = v1.0 milestone =
- - Ensure concerto builds against the master branch on GitHub
+ - Ensure concerto builds against the master branch on GitHub of parsifal
  - Write a micro-tutorial?
  - Rewrite maestro to be more modular (Makefile? different options?)
 
  - Add support to probe a server easily
  - Explicit implicit assumptions (buildChains relies on chains to be contiguous!)
- - Add support for table versionning
+ - Add support for table versionning (schemas should be put in DATA_DIR)
  - Add support for fileOps backend versionning (for the moment, we use csv+packs but there should be other backends)
+ - Create campaign and hash modules?
 
  - Improve -v on every program (to understand better some problems, some sizes)
  - All these options should be factored and pushed into fileOps?
@@ -14,9 +15,13 @@
 
  - Bug: Why does injectAnswers open all files?
  - Bug? Handle "FAILURE: TODO" and "FAILURE: SSLv3 PRF" in injectAD
+ - Bug: in stats, lines where kind is neither O, A, S or W. There are a lot with 101
+
+
 
 
 = Next steps =
+ - Include keys, fields, etc. in a table description to generate schemas and help re-open a file with the correct constraints
  - Optimize flagTrust (it is long and uses a lot of memory!
 $ time ~/dev/research/concerto/flagTrust -t ev --der -d all-campaigns--max-transvalid-3/ 2014-03-mozilla-ev-certs/*
 real    29m53.423s
@@ -27,9 +32,11 @@ real    83m12.053s
 user    24m18.924s
 sys     0m39.128s
 
- - use reload_keys in each program*
+ - use reload_keys in each program (for now it is only used for injectAD/chains.csv)
  - test it!
  - add --skip-reloading-keys-for <string> => string list (use with caution)
+
+ - Improve behavior stats?
 
  - Add relevant indices for trusted_certs/trusted_chains/rated_chains
  - Rethink the data structures (Hashtbl should not have large lists, and we should use sets instead of Hashtbl when possible) + use a binary representation in OCaml for hashes (abstract type Hash.t)
@@ -123,3 +130,7 @@ Website
 
 Maestro
  - Provide a finer-grain timing of db operations
+
+General
+ - Write unit tests to check backend
+ - Write unit tests for each program

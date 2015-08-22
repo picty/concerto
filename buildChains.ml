@@ -35,10 +35,6 @@ let options = [
 
 
 
-(* let hexparse s = *)
-(*   let tmp_input = input_of_string s s in *)
-(*   PTypes.hexparse tmp_input *)
-
 let read_links ops =
   let links = Hashtbl.create 1000 in
   let read_links_aux = function
