@@ -17,6 +17,7 @@ mergeDirs
 mergeRawFiles
 injectAnswerDump
 inject
+injectStimulus
 parseCerts
 prepareLinks
 checkLinks

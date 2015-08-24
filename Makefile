@@ -2,11 +2,11 @@
 TARGETS = listCSVFiles writeLine dumpFile readFile \
 	listRawTypes listRawPrefixes listRawByPrefix listRawByType \
 	mergeDirs mergeRawFiles \
-	injectAnswerDump inject \
+	injectAnswerDump inject injectStimulus \
 	parseCerts prepareLinks checkLinks \
 	removeIsolatedCerts computeComponents buildChains \
 	extract-certdata flagTrust rateChains \
-	globalStats versionStats computeStats computeBehaviorStats
+	globalStats versionStats computeStats computeBehaviorStats \
 
 listCSVFiles_SRCS := fileOps.ml listCSVFiles.ml
 writeLine_SRCS := fileOps.ml writeLine.ml
@@ -23,6 +23,7 @@ mergeRawFiles_SRCS := fileOps.ml mergeRawFiles.ml
 
 injectAnswerDump_SRCS := fileOps.ml injectAnswerDump.ml
 inject_SRCS := fileOps.ml inject.ml
+injectStimulus_SRCS := stimulus.ml fileOps.ml injectStimulus.ml
 parseCerts_SRCS := fileOps.ml parseCerts.ml
 prepareLinks_SRCS := fileOps.ml prepareLinks.ml
 checkLinks_SRCS := fileOps.ml checkLinks.ml
