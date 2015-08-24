@@ -1,10 +1,10 @@
-(* injectCerts.ml
+(* inject.ml
 
    Argument:
-    - cert files
+    - binary files
 
    Outputs:
-    - certs
+    - copy in raw/<type>
  *)
 
 open Parsifal
