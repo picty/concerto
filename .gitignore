@@ -22,7 +22,6 @@ injectStimulus
 parseCerts
 prepareLinks
 checkLinks
-removeIsolatedCerts
 computeComponents
 buildChains
 extract-certdata
