@@ -15,6 +15,7 @@ listRawByPrefix
 listRawByType
 mergeDirs
 mergeRawFiles
+testUuid
 injectAnswerDump
 inject
 injectStimulus
