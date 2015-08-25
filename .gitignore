@@ -28,7 +28,5 @@ buildChains
 extract-certdata
 flagTrust
 rateChains
-globalStats
-versionStats
 computeStats
 computeBehaviorStats
