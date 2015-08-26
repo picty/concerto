@@ -2,13 +2,16 @@
  - Ensure concerto builds against the master branch on GitHub of parsifal
  - Write a micro-tutorial?
  - Rewrite maestro to be more modular (Makefile? different options?)
+ - Add support for campaign ids / stimuli in maestro.
 
+ - Add UUIDv5 (sha1 + namespace) to replace hashes (including as key for binary storage)
+ - Improve CSV format (do not quote integer, hash or empty field!)
  - Add support to probe a server easily
  - Explicit implicit assumptions (buildChains relies on chains to be contiguous!)
  - Add support for table versionning (schemas should be put in DATA_DIR)
  - Add support for fileOps backend versionning (for the moment, we use csv+packs but there should be other backends)
- - Create campaign and hash modules?
 
+ - Write scripts to automate NSS store retrieval
  - Improve -v on every program (to understand better some problems, some sizes)
  - All these options should be factored and pushed into fileOps?
  - Improve arg handling in general
