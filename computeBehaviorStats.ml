@@ -40,7 +40,7 @@ let options = [
 
 
 let handle_answer answer_types_by_ip chain_sets ip_sets campaigns = function
-  | [campaign_str; ip; _; _; _; answer_type_str; _; _; _; _; chain_hash] ->
+  | [campaign_str; ip; _; _; _; answer_type_str; _; _; _; _; chain_hash; _; _; _; _] ->
      let campaign = int_of_string campaign_str
      and answer_type = int_of_string answer_type_str in
 
@@ -61,7 +61,7 @@ let handle_answer answer_types_by_ip chain_sets ip_sets campaigns = function
 
      CampaignSet.add campaign campaigns
 
-  | _ -> raise (InvalidNumberOfFields 11)
+  | _ -> raise (InvalidNumberOfFields 15)
 
 
 let update_count campaigns ip_sets counts ip answer_types =
