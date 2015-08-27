@@ -203,6 +203,7 @@ let prepare_data_dir data_dir =
     let line = try Some (input_line f) with End_of_file -> None in
     match line with
     | None -> close_in f; accu
+    | Some "" -> iter_lines_aux accu line_handler f
     | Some l ->
        let new_accu =
          try
