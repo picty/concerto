@@ -11,7 +11,11 @@ create table answers(
        ciphersuite int,
        alert_level int,
        alert_type int,
-       chain_hash text
+       chain_hash text,
+       version_compat int,
+       ciphersuite_compat int,
+       compression_compat int,
+       extensions_compat int
 );
 
 create table chains(
