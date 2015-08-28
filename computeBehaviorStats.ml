@@ -24,6 +24,7 @@ let add_campaign c = campaigns := !campaigns@[c]; ActionDone
 
 type feature =
   | AnswerType
+  | AnswerType2
 let feature_type = ref AnswerType
 let set_feature_type f () = feature_type := f
 
@@ -35,16 +36,28 @@ let options = [
   mkopt (Some 'f') "filter" (StringList filters) "add a trust flag to filter";
   mkopt (Some 'C') "campaign" (IntFun add_campaign) "add a campaign";
 
-  mkopt (Some 't') "answer-type" (TrivialFun (set_feature_type AnswerType)) "use answer-type as feature";
+  mkopt (Some 't') "answer-type" (TrivialFun (set_feature_type AnswerType)) "use answer-type (0/1/10/11/20/21) as feature";
+  mkopt None "answer-type2" (TrivialFun (set_feature_type AnswerType2)) "use answer-type (J/A/h/H) as feature";
 ]
 
 
 let handle_answer features_by_ip chain_sets ip_sets = function
-  | [campaign_str; ip; _; _; _; answer_type_str; _; _; _; _; chain_hash; _; _; _; _; _] ->
-     let campaign = int_of_string campaign_str in
+  | [campaign_str; ip; _; _; _; answer_type_str; _; _; _; _; chain_hash;
+     version_compat_str; suite_compat_str; compression_compat_str; extensions_compat_str; _] ->
+     let campaign = int_of_string campaign_str
+     and answer_compat =
+       version_compat_str <> "0" && suite_compat_str <> "0" &&
+         compression_compat_str <> "0" && extensions_compat_str <> "0"
+     in
      if List.mem campaign !campaigns then begin
        let feature = match !feature_type with
          | AnswerType -> answer_type_str
+         | AnswerType2 ->
+            match int_of_string answer_type_str, answer_compat with
+            | 10, _ | 11, _ -> "A"
+            | 20, true | 21, true -> "H"
+            | 20, false | 21, false -> "h"
+            | _ -> "J"
        in
 
        let current_list =
@@ -83,6 +96,7 @@ let update_count ip_sets counts ip answer_types =
 let write_one_line ops (trust_flag, answer_types) count =
   let feature_str = match !feature_type with
     | AnswerType -> "answertype"
+    | AnswerType2 -> "answertype2"
   in
   let table_name = "stats_behavior_" ^ (String.concat "_" (List.map string_of_int !campaigns)) ^ "_" ^ feature_str in
   ops.write_line table_name "" ((trust_flag::answer_types)@[string_of_int count])
