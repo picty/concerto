@@ -43,14 +43,18 @@ let increment campaign trust_flag stat_kind counts v =
 
 
 let update_count chain_sets counts = function
-  | [campaign_str; _; _; _; _; answer_type; version; ciphersuite; _; _; chain_hash; _; _; _; _] ->
-     let campaign = int_of_string campaign_str in
-
+  | [campaign_str; _; _; _; _; answer_type; version; ciphersuite; _; _; chain_hash;
+     version_compat_str; suite_compat_str; compression_compat_str; extensions_compat_str] ->
+     let campaign = int_of_string campaign_str
+     and answer_compat =
+       version_compat_str = "1" && suite_compat_str = "1" &&
+         compression_compat_str = "1" && extensions_compat_str = "1"
+     in
      let add_for_trust_flag trust_flag =
-       increment campaign trust_flag "answertypes" counts answer_type;
+       increment campaign trust_flag "answertypes" counts [answer_type; if answer_compat then "1" else "0"];
        if answer_type = "20" || answer_type = "21" then begin
-         increment campaign trust_flag "versions" counts version;
-         increment campaign trust_flag "ciphersuites" counts ciphersuite
+         increment campaign trust_flag "versions" counts [version; version_compat_str];
+         increment campaign trust_flag "ciphersuites" counts [ciphersuite; suite_compat_str]
        end
      in
 
@@ -65,8 +69,8 @@ let update_count chain_sets counts = function
   | _ -> raise (InvalidNumberOfFields 15)
 
 
-let write_one_value ops (campaign, trust_flag, stat_kind) value count =
-  ops.write_line ("stats_" ^ stat_kind) "" [string_of_int campaign; trust_flag; value; string_of_int count]
+let write_one_value ops (campaign, trust_flag, stat_kind) value_list count =
+  ops.write_line ("stats_" ^ stat_kind) "" ([string_of_int campaign; trust_flag]@value_list@[string_of_int count])
 
 let write_one_hashtbl ops k h =
   Hashtbl.iter (write_one_value ops k) h

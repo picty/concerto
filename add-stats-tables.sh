@@ -39,6 +39,7 @@ create table stats_answertypes(
        campaign int,
        trust_flag text,
        answer_type int,
+       answer_compat int,
        count int
 );
 
@@ -46,6 +47,7 @@ create table stats_versions(
        campaign int,
        trust_flag text,
        version int,
+       version_compat int,
        count int
 );
 
@@ -53,6 +55,7 @@ create table stats_ciphersuites(
        campaign int,
        trust_flag text,
        ciphersuite int,
+       ciphersuite_compat int,
        count int
 );
 
