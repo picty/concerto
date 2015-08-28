@@ -33,12 +33,16 @@ let campaign_id = ref None
 let update r v = r := Some v; ActionDone
 let stimulus_name = ref None
 let stimulus_id = ref None
+let dump_version = ref 2
+let timestamp = ref None
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
   mkopt (Some 'C') "campaign" (IntFun (update campaign_id)) "override the campaign id (default is to use data from the dump.";
+  mkopt None "dump-version" (IntVal dump_version) "set the version of answer dump format (version 1 requires a timestamp)";
+  mkopt None "timestamp" (IntFun (update timestamp)) "set the timestamp for old dump format";
 
   mkopt None "stimulus-name" (StringFun (update stimulus_name)) "set the stimulus name (default is stimulus file name)";
   mkopt None "stimulus-id" (IntFun (update stimulus_id)) "set the stimulus id (default is campaign number)";
@@ -138,7 +142,12 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
       else fail e
     | e -> fail e
 
-  in try_bind (fun () -> lwt_parse_wrapper parse_answer_dump_v2 input) finalize_ok finalize_nok
+  and real_parse_answer_dump = match !dump_version, !timestamp with
+    | 2, _ -> parse_answer_dump_v2
+    | 1, Some ts -> fun i -> (v2_of_v1 ~timestamp:(Int64.of_int ts) (parse_answer_dump i))
+    | _ -> failwith "Only v2 or v1 (with timestamp) dumps are accepted"
+
+  in try_bind (fun () -> lwt_parse_wrapper real_parse_answer_dump input) finalize_ok finalize_nok
 
 
 let extract_stimulus_versions result = function
