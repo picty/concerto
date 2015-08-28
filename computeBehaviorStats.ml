@@ -24,9 +24,6 @@ let add_campaign c = campaigns := !campaigns@[c]; ActionDone
 
 type feature =
   | AnswerType
-  | CertChain
-  | ServerCert
-  | ServerDN
 let feature_type = ref AnswerType
 let set_feature_type f () = feature_type := f
 
@@ -39,7 +36,6 @@ let options = [
   mkopt (Some 'C') "campaign" (IntFun add_campaign) "add a campaign";
 
   mkopt (Some 't') "answer-type" (TrivialFun (set_feature_type AnswerType)) "use answer-type as feature";
-  mkopt (Some 'c') "chains" (TrivialFun (set_feature_type CertChain)) "use chains as feature";
 ]
 
 
@@ -49,8 +45,6 @@ let handle_answer features_by_ip chain_sets ip_sets = function
      if List.mem campaign !campaigns then begin
        let feature = match !feature_type with
          | AnswerType -> answer_type_str
-         | CertChain -> chain_hash
-         | ServerDN | ServerCert -> failwith "Not implemented yet"
        in
 
        let current_list =
@@ -89,9 +83,6 @@ let update_count ip_sets counts ip answer_types =
 let write_one_line ops (trust_flag, answer_types) count =
   let feature_str = match !feature_type with
     | AnswerType -> "answertype"
-    | CertChain -> "certchain"
-    | ServerCert -> "servercert"
-    | ServerDN -> "serverdn"
   in
   let table_name = "stats_behavior_" ^ (String.concat "_" (List.map string_of_int !campaigns)) ^ "_" ^ feature_str in
   ops.write_line table_name "" ((trust_flag::answer_types)@[string_of_int count])
