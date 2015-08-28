@@ -48,8 +48,8 @@ let update_count chain_sets counts = function
      version_compat_str; suite_compat_str; compression_compat_str; extensions_compat_str; is_rfc5746_supported] ->
      let campaign = int_of_string campaign_str
      and answer_compat =
-       version_compat_str = "1" && suite_compat_str = "1" &&
-         compression_compat_str = "1" && extensions_compat_str = "1"
+       version_compat_str <> "0" && suite_compat_str <> "0" &&
+         compression_compat_str <> "0" && extensions_compat_str <> "0"
      in
      let add_for_trust_flag trust_flag =
        increment campaign trust_flag "answertypes" counts [answer_type; if answer_compat then "1" else "0"];
