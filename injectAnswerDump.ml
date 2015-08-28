@@ -53,6 +53,10 @@ let get_campaign_from_cmdline id =
 
 let rec handle_one_file get_campaign stimulus_checks ops input =
   let is_version_compatible, is_suite_compatible, is_compression_compatible, are_extensions_compatible = stimulus_checks in
+  let is_rfc5746_supported = function
+    | None -> false
+    | Some es -> List.mem 65281 (List.map (fun e -> int_of_extension_type e.extension_type) es)
+  in
   let finalize_ok answer =
     let ip_str = string_of_v2_ip answer.ip_addr in
     let campaign = get_campaign answer in
@@ -69,27 +73,28 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
     let unchecked_certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) raw_certs in
 
     let answer_type, version, ciphersuite, alert_level, alert_type,
-      version_compat, suite_compat, compression_compat, extensions_compat = match parsed_answer.pa_content with
-      | Empty -> "0", "", "", "", "", "", "", "", ""
-      | Junk _ -> "1", "", "", "", "", "", "", "", ""
+        version_compat, suite_compat, compression_compat, extensions_compat,
+        secure_renego_supported = match parsed_answer.pa_content with
+      | Empty -> "0", "", "", "", "", "", "", "", "", ""
+      | Junk _ -> "1", "", "", "", "", "", "", "", "", ""
       | SSLv2Handshake {version = v; cipher_specs = []} ->
          let v_int = int_of_tls_version v in
          "20", string_of_int v_int, "", "", "",
-           (if is_version_compatible v_int then "1" else "0"), "", "", ""
+           (if is_version_compatible v_int then "1" else "0"), "", "", "", "0"
 
       | SSLv2Alert e ->
-         "10", "2", "", "2", string_of_int (int_of_ssl2_error e), "", "", "", ""
+         "10", "2", "", "2", string_of_int (int_of_ssl2_error e), "", "", "", "", ""
       | TLSAlert (v, al, at) ->
          "11", string_of_int (int_of_tls_version v), "",
          string_of_int (int_of_tls_alert_level al), string_of_int (int_of_tls_alert_type at),
-         "", "", "", ""
+         "", "", "", "", ""
 
       | SSLv2Handshake {version = v; cipher_specs = c::_} ->
          let v_int = int_of_tls_version v
          and c_int = int_of_ciphersuite c in
          "20", string_of_int v_int, string_of_int c_int, "", "",
          (if is_version_compatible v_int then "1" else "0"),
-         (if is_suite_compatible c_int then "1" else "0"), "1", "1"
+         (if is_suite_compatible c_int then "1" else "0"), "1", "1", "0"
       | TLSHandshake h ->
          let v_int = int_of_tls_version h.server_hello_version
          and c_int = int_of_ciphersuite h.ciphersuite in
@@ -97,7 +102,8 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
          (if is_version_compatible v_int then "1" else "0"),
          (if is_suite_compatible c_int then "1" else "0"),
          (if is_compression_compatible (int_of_compression_method h.compression_method) then "1" else "0"),
-         (if are_extensions_compatible h.extensions then "1" else "0")
+         (if are_extensions_compatible h.extensions then "1" else "0"),
+         (if is_rfc5746_supported h.extensions then "1" else "0")
     in
 
     let chain_hash =
@@ -112,6 +118,7 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
          answer_type; version; ciphersuite; alert_level; alert_type;
          hexdump chain_hash;
          version_compat; suite_compat; compression_compat; extensions_compat;
+         secure_renego_supported
         ];
 
       if ops.check_key_freshness "chains" (hexdump chain_hash) then begin

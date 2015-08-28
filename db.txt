@@ -15,7 +15,8 @@ create table answers(
        version_compat int,
        ciphersuite_compat int,
        compression_compat int,
-       extensions_compat int
+       extensions_compat int,
+       is_rfc5746_supported int
 );
 
 create table chains(
