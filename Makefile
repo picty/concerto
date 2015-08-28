@@ -8,6 +8,7 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	computeComponents buildChains \
 	extract-certdata flagTrust rateChains \
 	computeStats computeBehaviorStats \
+	computeStatsV computeBehaviorStatsV
 
 listCSVFiles_SRCS := fileOps.ml listCSVFiles.ml
 writeLine_SRCS := fileOps.ml writeLine.ml
@@ -38,6 +39,8 @@ rateChains_SRCS := fileOps.ml rateChains.ml
 
 computeStats_SRCS := fileOps.ml statOps.ml computeStats.ml
 computeBehaviorStats_SRCS := fileOps.ml statOps.ml computeBehaviorStats.ml
+computeStatsV_SRCS := fileOps.ml statOps.ml computeStatsV.ml
+computeBehaviorStatsV_SRCS := fileOps.ml statOps.ml computeBehaviorStatsV.ml
 
 # comment this line if not using camlp4
 # USE_CAMLP4 = yes
