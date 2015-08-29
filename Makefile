@@ -26,7 +26,7 @@ mergeRawFiles_SRCS := fileOps.ml mergeRawFiles.ml
 testUuid_SRCS := uuid.ml testUuid.ml
 testJson_SRCS := testJson.ml
 
-injectAnswerDump_SRCS := fileOps.ml injectAnswerDump.ml
+injectAnswerDump_SRCS := fileOps.ml stimulus.ml injectAnswerDump.ml
 inject_SRCS := fileOps.ml inject.ml
 injectStimulus_SRCS := stimulus.ml fileOps.ml injectStimulus.ml
 parseCerts_SRCS := fileOps.ml parseCerts.ml

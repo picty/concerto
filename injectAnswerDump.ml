@@ -24,6 +24,7 @@ open TlsEnums
 open X509Util
 open AnswerDumpUtil
 open FileOps
+open Stimulus
 
 
 let verbose = ref false
@@ -150,62 +151,6 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
   in try_bind (fun () -> lwt_parse_wrapper real_parse_answer_dump input) finalize_ok finalize_nok
 
 
-let extract_stimulus_versions result = function
-  | [id_str; name; min_version; max_version] ->
-     let id = int_of_string id_str in
-     if !stimulus_id = Some id || !stimulus_name = Some name
-     then begin
-       stimulus_id := Some id;
-       Some (id, int_of_string min_version, int_of_string max_version)
-     end else result
-  | _ -> result
-
-let extract_stimulus_params results = function
-  | [id_str; suite_str] ->
-     let id = int_of_string id_str
-     and suite = int_of_string suite_str in
-     if !stimulus_id = Some id
-     then suite::results
-     else results
-  | _ -> results
-
-
-let extract_stimulus_checks ops =
-  let stimulus_info = match !stimulus_name, !stimulus_id with
-    | None, None -> None
-    | _ ->
-       match ops.iter_lines_accu "stimuli" extract_stimulus_versions None with
-       | None -> None
-       | Some (stimulus_id, min_version, max_version) ->
-          let suites = ops.iter_lines_accu "stimuli_suites" extract_stimulus_params []
-          and compressions = ops.iter_lines_accu "stimuli_compressions" extract_stimulus_params []
-          and extensions = ops.iter_lines_accu "stimuli_extensions" extract_stimulus_params [] in
-          Some (stimulus_id, min_version, max_version, suites, compressions, extensions)
-  in
-  match stimulus_info with
-  | None ->
-     let always_true _ = true in
-     always_true, always_true, always_true, always_true
-  | Some (stimulus_id, min_version, max_version, suites, compressions, extensions) ->
-     begin
-       match !campaign_id with
-       | None -> ()
-       | Some cid -> ops.write_line "campaigns" "" [string_of_int cid; string_of_int stimulus_id]
-     end;
-     let is_version_compatible v = min_version <= v && max_version >= v
-     and is_suite_compatible s = s <> 0x00ff && List.mem s suites
-     and is_compression_compatible c = List.mem c compressions
-     and is_extension_compatible e =
-       (e = 65281 && List.mem 0x00ff suites) ||
-         List.mem e extensions
-     in
-     let are_extensions_compatible = function
-       | None -> true
-       | Some exts ->
-          let ext_types = List.map (fun e -> int_of_extension_type e.extension_type) exts in
-          List.fold_left (&&) true (List.map is_extension_compatible ext_types)
-     in
-     is_version_compatible, is_suite_compatible, is_compression_compatible, are_extensions_compatible
 
 let _ =
   let dump_files = parse_args ~progname:"injectAnswerDump" options Sys.argv in
@@ -216,7 +161,13 @@ let _ =
       | Some id -> get_campaign_from_cmdline id
     and ops = prepare_data_dir !data_dir in
     ops.reload_keys "chains" (List.hd);
-    let stimulus_checks = extract_stimulus_checks ops in
+    let real_stimulus_id, stimulus_checks = extract_stimulus_checks !stimulus_name !stimulus_id ops in
+    begin
+      match !campaign_id, real_stimulus_id with
+      | None, _ | _, None -> ()
+      | Some cid, Some sid -> ops.write_line "campaigns" "" [string_of_int cid; string_of_int sid]
+    end;
+
     let open_files = function
       | [] -> input_of_channel ~verbose:(!verbose) "(stdin)" Lwt_io.stdin >>= fun x -> return [x]
       | _ -> Lwt_list.map_s input_of_filename dump_files
