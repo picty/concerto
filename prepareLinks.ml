@@ -15,11 +15,14 @@ let rundry = ref false
 let accept_v1_ca = ref false
 let data_dir = ref ""
 
+let multiple = ref 1
+
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'n') "run-dry" (Set rundry) "do not produce links.csv, just count the lines";
   mkopt (Some '1') "accept-version1-ca" (Set accept_v1_ca) "accept X.509v1 certificates as CA";
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
+  mkopt (Some 'M') "multiple" (IntVal multiple) "set the number of output for possible links."
 ]
 
 
@@ -37,9 +40,20 @@ let add_line = function
 
 let filter_fun aki_ki aki_serial (_, ski, serial) = (aki_ki = "" || aki_ki = ski) && (aki_serial = "" || aki_serial = serial)
 
-let write_possible_links ops cert_hash (issuer_hash, aki_ki, aki_serial) =
+
+let get_filename n_ref max =
+  if max < 2
+  then "possible_links"
+  else begin
+    let res = "possible_links_" ^ (string_of_int !n_ref) in
+    incr n_ref;
+    if !n_ref >= max then n_ref := 0;
+    res
+  end
+
+let write_possible_links ops n cert_hash (issuer_hash, aki_ki, aki_serial) =
   let possible_issuers = Hashtbl.find_all cert_hash_by_subject_hash issuer_hash in
-  let write_possible_issuer (i, _, _) = ops.write_line "possible_links" "" [cert_hash; i] in
+  let write_possible_issuer (i, _, _) = ops.write_line (get_filename n !multiple) "" [cert_hash; i] in
   List.iter write_possible_issuer (List.filter (filter_fun aki_ki aki_serial) possible_issuers)
 
 let count_possible_links total _cert_hash (issuer_hash, aki_ki, aki_serial) (n_certs, n_links) =
@@ -63,7 +77,8 @@ let _ =
     let ops = prepare_data_dir !data_dir in
     List.iter (fun csv -> ops.iter_lines csv add_line) csv_files;
     if not !rundry then begin
-      Hashtbl.iter (write_possible_links ops) issuer_hash_by_cert_hash;
+      let n = ref 0 in
+      Hashtbl.iter (write_possible_links ops n) issuer_hash_by_cert_hash;
       ops.close_all_files ()
     end else begin
       let total = Hashtbl.length issuer_hash_by_cert_hash in
