@@ -2,7 +2,7 @@
 TARGETS = listCSVFiles writeLine dumpFile readFile \
 	listRawTypes listRawPrefixes listRawByPrefix listRawByType \
 	mergeDirs mergeRawFiles \
-	testUuid \
+	testUuid testJson \
 	injectAnswerDump inject injectStimulus \
 	parseCerts prepareLinks checkLinks \
 	computeComponents buildChains \
@@ -24,6 +24,7 @@ mergeDirs_SRCS := fileOps.ml mergeDirs.ml
 mergeRawFiles_SRCS := fileOps.ml mergeRawFiles.ml
 
 testUuid_SRCS := uuid.ml testUuid.ml
+testJson_SRCS := testJson.ml
 
 injectAnswerDump_SRCS := fileOps.ml injectAnswerDump.ml
 inject_SRCS := fileOps.ml inject.ml
@@ -51,7 +52,8 @@ CC = gcc
 # remember, libs are always lowercase
 OCAML_LIBS = unix lwt lwt.unix str calendar cryptokit \
         parsifal_syntax parsifal_core parsifal_crypto \
-        parsifal_net parsifal_lwt parsifal_ssl
+        parsifal_net parsifal_lwt parsifal_ssl \
+        easy-format biniou yojson
 
 # use the following variables to add extra flags (not guessed by ocamlfind)
 EXTRA_OCAMLOPT_CC_FLAGS =

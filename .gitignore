@@ -16,6 +16,7 @@ listRawByType
 mergeDirs
 mergeRawFiles
 testUuid
+testJson
 injectAnswerDump
 inject
 injectStimulus

@@ -5,6 +5,7 @@ Concerto currently depends on the following OCaml libraries:
 * Lwt
 * Calendar
 * Cryptokit
+* Yojson
 * Parsifal (available at https://github.com/ANSSI-FR/parsifal)
 
 To compile Concerto, you also need the following tools:
@@ -25,6 +26,7 @@ you have the following packages installed:
  * liblwt-ocaml-dev
  * libcalendar-ocaml-dev
  * libcryptokit-ocaml-dev
+ * libyojson-ocaml-dev
 
 When they are installed, you can type in the following commands:
 % cd <your_dev_dir>
