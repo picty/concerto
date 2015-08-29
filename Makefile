@@ -4,7 +4,7 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	mergeDirs mergeRawFiles \
 	testUuid testJson \
 	injectAnswerDump injectZGrabResults inject injectStimulus \
-	parseCerts prepareLinks checkLinks \
+	parseCerts prepareLinks stripPossibleLinks checkLinks \
 	computeComponents buildChains \
 	extract-certdata flagTrust rateChains \
 	computeStats computeBehaviorStats \
@@ -32,6 +32,7 @@ inject_SRCS := fileOps.ml inject.ml
 injectStimulus_SRCS := stimulus.ml fileOps.ml injectStimulus.ml
 parseCerts_SRCS := fileOps.ml parseCerts.ml
 prepareLinks_SRCS := fileOps.ml prepareLinks.ml
+stripPossibleLinks_SRCS := fileOps.ml stripPossibleLinks.ml
 checkLinks_SRCS := fileOps.ml checkLinks.ml
 computeComponents_SRCS := fileOps.ml computeComponents.ml
 buildChains_SRCS := fileOps.ml buildChains.ml

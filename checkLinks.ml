@@ -1,4 +1,4 @@
-(* prepareLinks.ml
+(* checkLinks.ml
 
    Inputs:
     - possible_links.csv
