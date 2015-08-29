@@ -4,6 +4,7 @@
 *.cmo
 *.cmx
 build
+stats
 attic
 listCSVFiles
 writeLine
@@ -18,6 +19,7 @@ mergeRawFiles
 testUuid
 testJson
 injectAnswerDump
+injectZGrabResults
 inject
 injectStimulus
 parseCerts
