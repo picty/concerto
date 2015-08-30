@@ -160,8 +160,7 @@ let handle_one_line stimulus_checks ops json_value =
   in List.iter save_cert unchecked_certs
 
 
-let handle_one_file stimulus_checks ops filename =
-  let f = open_in filename in
+let handle_one_file stimulus_checks ops f =
   let rec aux () =
     let line = 
       try Some (input_line f)
@@ -190,7 +189,9 @@ let _ =
       | Some sid -> ops.write_line "campaigns" "" [string_of_int !campaign_id; string_of_int sid]
     end;
 
-    List.iter (handle_one_file stimulus_checks ops) zgrab_files;
+    if zgrab_files = []
+    then handle_one_file stimulus_checks ops stdin
+    else List.iter (fun fn -> handle_one_file stimulus_checks ops (open_in fn)) zgrab_files;
     ops.close_all_files ()
   with
     | NotFound (field_name, json) -> 
