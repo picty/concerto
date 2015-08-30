@@ -119,3 +119,20 @@ select stats_ciphersuites.campaign, stats_ciphersuites.trust_flag,
   group by stats_ciphersuites.campaign, stats_ciphersuites.trust_flag
   order by agg.campaign ASC, agg.trust_flag ASC
 ;
+
+
+-- Stats for RFC5746
+select stats_rfc5746.campaign, stats_rfc5746.trust_flag,
+       round (sum(count) * 100.0 / total, 3) as proportion
+  from stats_rfc5746
+  left join
+       (select campaign, trust_flag, sum(count) as total
+          from stats_rfc5746
+          group by campaign, trust_flag
+       ) agg
+         on stats_rfc5746.campaign = agg.campaign
+         and stats_rfc5746.trust_flag = agg.trust_flag
+  where rfc5746_supported = 1
+  group by stats_rfc5746.campaign, stats_rfc5746.trust_flag
+  order by agg.campaign ASC, agg.trust_flag ASC
+;

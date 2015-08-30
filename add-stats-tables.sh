@@ -59,6 +59,13 @@ create table stats_ciphersuites(
        count int
 );
 
+create table stats_rfc5746(
+       campaign int,
+       trust_flag text,
+       rfc5746_supported int,
+       count int
+);
+
 
 
 -- Import
@@ -68,4 +75,5 @@ create table stats_ciphersuites(
 .import $DATA_DIR/stats_answertypes.csv stats_answertypes
 .import $DATA_DIR/stats_versions.csv stats_versions
 .import $DATA_DIR/stats_ciphersuites.csv stats_ciphersuites
+.import $DATA_DIR/stats_rfc5746.csv stats_rfc5746
 EOF
