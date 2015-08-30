@@ -117,8 +117,12 @@ let handle_one_line stimulus_checks ops json_value =
       and is_rfc5746_supported = get_bool_from_json sh "secure_renegotiation" in
 
       let cert_b64 = get_str_from_json json_value "data.tls.server_certificates.certificate.raw"
-      and chain_b64 = List.map (fun o -> get_str_from_json o "raw")
-         (get_list_from_json json_value "data.tls.server_certificates.chain") in
+      and chain_b64 =
+        try
+          List.map (fun o -> get_str_from_json o "raw")
+            (get_list_from_json json_value "data.tls.server_certificates.chain")
+        with NotFound _ -> []
+      in
       let debase64 s =
         let i = input_of_string "" s in
         Base64.parse_base64_container Base64.NoHeader "" BasePTypes.parse_rem_string i
