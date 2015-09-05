@@ -66,6 +66,12 @@ create table stats_rfc5746(
        count int
 );
 
+create table stats_chain_quality(
+       campaign int,
+       trust_flag text,
+       best_quality int,
+       count int
+);
 
 
 -- Import
@@ -76,4 +82,5 @@ create table stats_rfc5746(
 .import $DATA_DIR/stats_versions.csv stats_versions
 .import $DATA_DIR/stats_ciphersuites.csv stats_ciphersuites
 .import $DATA_DIR/stats_rfc5746.csv stats_rfc5746
+.import $DATA_DIR/stats_chain_quality.csv stats_chain_quality
 EOF

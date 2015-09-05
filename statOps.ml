@@ -33,6 +33,46 @@ let load_chain_validities ops =
   chain_validities
 
 
+let handle_chain_details_line chain_details = function
+  | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; nb_str; na_str; _] ->
+     let complete = complete_str = "1"
+     and ordered = ordered_str = "1"
+     and n_transvalid = int_of_string n_transvalid_str
+     and n_unused = int_of_string n_unused_str
+     and nb = Int64.of_string nb_str
+     and na = Int64.of_string na_str in
+     let details = complete, ordered, n_unused, n_transvalid, nb, na in
+     Hashtbl.add chain_details chain_h details
+  | _ -> raise (InvalidNumberOfFields 10)
+
+let load_chain_details ops =
+  let chain_details = Hashtbl.create 1000 in
+  ops.iter_lines "built_chains" (handle_chain_details_line chain_details);
+  chain_details
+
+
+type chain_quality =
+  | Incomplete
+  | Transvalid
+  | Unordered
+  | RFCCompliant
+
+let int_of_chain_quality = function
+  | Incomplete -> 0
+  | Transvalid -> 1
+  | Unordered -> 2
+  | RFCCompliant -> 3
+
+let compare_chain_quality q1 q2 = compare (int_of_chain_quality q1) (int_of_chain_quality q2)
+
+let chain_quality_of_details = function
+  | false, _, _, _, _, _ -> Incomplete
+  | true, true, 0, 0, _, _ -> RFCCompliant
+  | true, true, _, 0, _, _
+  | true, false, _, 0, _, _ -> Unordered
+  | true, _, _, _, _, _ -> Transvalid
+
+
 let is_flagged_with chain_sets trust_flag chain_hash =
   let s = Hashtbl.find chain_sets trust_flag in
   StringSet.mem chain_hash s

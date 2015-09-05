@@ -65,6 +65,11 @@ create table answer_types(
        name text
 );
 
+create table chain_quality(
+       quality int,
+       name text
+);
+
 
 -- Import
 
@@ -73,4 +78,5 @@ create table answer_types(
 .import $BIN_DIR/enriched-ciphersuites.csv tls_ciphersuites
 .import $BIN_DIR/versions.csv tls_versions
 .import $BIN_DIR/answer_types.csv answer_types
+.import $BIN_DIR/chain_quality.csv chain_quality
 EOF

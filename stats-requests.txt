@@ -136,3 +136,22 @@ select stats_rfc5746.campaign, stats_rfc5746.trust_flag,
   group by stats_rfc5746.campaign, stats_rfc5746.trust_flag
   order by agg.campaign ASC, agg.trust_flag ASC
 ;
+
+
+
+
+-- Best chain quality by campaign/trust_flag
+
+select agg.campaign, agg.trust_flag,
+       chain_quality.name as best_quality, count, total, round (count * 100.0 / total, 3) as proportion
+  from stats_chain_quality
+  join chain_quality on chain_quality.quality = stats_chain_quality.best_quality,
+       (select campaign, trust_flag, sum(count) as total
+          from stats_chain_quality
+          where best_quality >= 0
+          group by campaign, trust_flag
+       ) agg
+         on stats_chain_quality.campaign = agg.campaign
+         and stats_chain_quality.trust_flag = agg.trust_flag
+  order by agg.campaign ASC, agg.trust_flag ASC
+;
