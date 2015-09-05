@@ -1,8 +1,9 @@
 (* flagTrust.ml
 
    Inputs:
-    - links.csv
     - built_links.csv
+    - links.csv
+    - chains.csv
 
    Argument:
     - trusted_certs
@@ -13,12 +14,21 @@
    Outputs:
     - trusted_certs.csv
     - trusted_chains.csv
+    - trusted_built_chains.csv
  *)
 
 open Parsifal
 open Getopt
 open FileOps
 open X509Util
+
+module StringSet = Set.Make(String)
+
+module StringPair = struct
+  type t = string * string
+  let compare x y = Pervasives.compare x y
+end
+module StringPairSet = Set.Make(StringPair)
 
 let verbose = ref false
 let data_dir = ref ""
@@ -57,46 +67,66 @@ let extract_cert_hash cert_filename =
   let sc = sc_of_input !base64 false (string_input_of_filename cert_filename) in
   hexdump (hash_of_sc sc)
 
+let update_trusted_built_chains trusted_roots trusted_built_chains = function
+  | [chain_hash; chain_number; _; _; cert_hash] ->
+     if (StringSet.mem cert_hash trusted_roots)
+     then StringPairSet.add (chain_hash, chain_number) trusted_built_chains
+     else trusted_built_chains
+   | _ -> raise (InvalidNumberOfFields 5)
+
 let rec update_trusted_certs trusted_certs links hashes =
-  let update_aux next_hashes h =
-    if Hashtbl.mem trusted_certs h
-    then next_hashes
+  let update_aux h ((cur_hashes, cur_trusted_certs) as cur) =
+    if StringSet.mem h cur_trusted_certs
+    then cur
     else begin
-      Hashtbl.replace trusted_certs h ();
+      let next_trusted_certs = StringSet.add h cur_trusted_certs in
       let new_hashes =
         try Hashtbl.find links h
         with Not_found -> []
       in
-      List.rev_append new_hashes next_hashes
+      let next_hashes = List.fold_left (fun s e -> StringSet.add e s) cur_hashes new_hashes in
+      next_hashes, next_trusted_certs
     end
   in
-  let next_hashes = List.fold_left update_aux [] hashes in
-  if next_hashes <> [] then update_trusted_certs trusted_certs links next_hashes
+  let next_hashes, next_trusted_certs = StringSet.fold update_aux hashes (StringSet.empty, trusted_certs) in
+  if StringSet.is_empty next_hashes
+  then next_trusted_certs
+  else update_trusted_certs next_trusted_certs links next_hashes
 
 let update_trusted_chains trusted_certs trusted_chains = function
-  | [chain_hash; chain_number; _; _; cert_hash] ->
-     if not (Hashtbl.mem trusted_chains (chain_hash, chain_number)) &&
-          (Hashtbl.mem trusted_certs cert_hash)
-     then Hashtbl.replace trusted_chains (chain_hash, chain_number) ()
-  | _ -> raise (InvalidNumberOfFields 5)
+  | [chain_hash; "0"; cert_hash] ->
+     if (StringSet.mem cert_hash trusted_certs)
+     then StringSet.add chain_hash trusted_chains
+     else trusted_chains
+  | [_; _; _] -> trusted_chains
+  | _ -> raise (InvalidNumberOfFields 3)
 
+               
 let _ =
-  let certs = parse_args ~progname:"flagTrust" options Sys.argv in
+  let trusted_root_certs = parse_args ~progname:"flagTrust" options Sys.argv in
   if !data_dir = "" then usage "flagTrust" options (Some "Please provide a valid data directory");
-  if certs = [] then usage "flagTrust" options (Some "Please provide at least one certificate.");
+  if trusted_root_certs = [] then usage "flagTrust" options (Some "Please provide at least one certificate.");
   try
-    let cert_hashes = List.map extract_cert_hash certs in
+    let trusted_root_hashes = List.map extract_cert_hash trusted_root_certs in
+    let trusted_roots = List.fold_left (fun s e -> StringSet.add e s) StringSet.empty trusted_root_hashes in
     let ops = prepare_data_dir !data_dir in
+
+    let trusted_built_chains = ops.iter_lines_accu "built_links" (update_trusted_built_chains trusted_roots) StringPairSet.empty in
+    if !verbose then print_endline "trusted_built_chains.csv computed.";
+    StringPairSet.iter (fun (c, n) -> ops.write_line "trusted_built_chains" "" [c; n; !trust_flag]) trusted_built_chains;
+    if !verbose then print_endline "trusted_built_chains.csv written.";
+
     let links = read_links_by_issuer ops in
     if !verbose then print_endline "Links loaded.";
+    let trusted_certs = update_trusted_certs StringSet.empty links trusted_roots in
+    if !verbose then print_endline "trusted_certs.csv computed.";
+    StringSet.iter (fun h -> ops.write_line "trusted_certs" "" [h; !trust_flag]) trusted_certs;
+    if !verbose then print_endline "trusted_certs.csv written.";
 
-    let trusted_certs = Hashtbl.create 1000 in
-    update_trusted_certs trusted_certs links cert_hashes;
-    Hashtbl.iter (fun h _ -> ops.write_line "trusted_certs" "" [h; !trust_flag]) trusted_certs;
-
-    let trusted_chains = Hashtbl.create 1000 in
-    ops.iter_lines "built_links" (update_trusted_chains trusted_certs trusted_chains);
-    Hashtbl.iter (fun (c, n) _ -> ops.write_line "trusted_chains" "" [c; n; !trust_flag]) trusted_chains;
+    let trusted_chains = ops.iter_lines_accu "chains" (update_trusted_chains trusted_certs) StringSet.empty in
+    if !verbose then print_endline "trusted_chains.csv computed.";
+    StringSet.iter (fun c -> ops.write_line "trusted_chains" "" [c; !trust_flag]) trusted_chains;
+    if !verbose then print_endline "trusted_chains.csv written.";
 
     ops.close_all_files ()
   with
