@@ -94,7 +94,7 @@ let handle_one_line stimulus_checks ops json_value =
   let is_version_compatible, is_suite_compatible, is_compression_compatible, _ = stimulus_checks in
   let ip_str = get_str_from_json json_value "ip"
   and campaign = string_of_int !campaign_id
-  and name = get_str_from_json json_value "domain"
+  and name = try get_str_from_json json_value "domain" with NotFound _ -> ""
   and port = 443 (* TODO! *)
   and timestamp = translate_timestamp (get_str_from_json json_value "timestamp") in
 
