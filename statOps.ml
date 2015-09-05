@@ -4,11 +4,11 @@ module StringSet = Set.Make(String)
 
 
 let handle_trusted_chain_line chain_sets = function
-  | [chain_hash; built_chain_number; trust_flag] ->
+  | [chain_hash; trust_flag] ->
      begin
        try
-         let h = Hashtbl.find chain_sets trust_flag in
-         Hashtbl.add h chain_hash (int_of_string built_chain_number);
+         let s = Hashtbl.find chain_sets trust_flag in
+         Hashtbl.replace chain_sets trust_flag (StringSet.add chain_hash s)
        with Not_found -> ()
      end
   | _ -> raise (InvalidNumberOfFields 3)
@@ -16,16 +16,15 @@ let handle_trusted_chain_line chain_sets = function
 let load_trusted_chains ops trust_flags =
   let chain_sets = Hashtbl.create 10 in
   if trust_flags <> [] then begin
-    List.iter (fun trust_flag -> Hashtbl.add chain_sets trust_flag (Hashtbl.create 1000)) trust_flags;
+    List.iter (fun trust_flag -> Hashtbl.add chain_sets trust_flag StringSet.empty) trust_flags;
     ops.iter_lines "trusted_chains" (handle_trusted_chain_line chain_sets);
   end;
   chain_sets
 
 
 let handle_chain_validity_line chain_validities = function
-  | [chain_hash; built_chain_number_str; _; _; _; _; _; nb_str; na_str; _] ->
-     let built_chain_number = int_of_string built_chain_number_str in
-     Hashtbl.replace chain_validities (chain_hash, built_chain_number) (Int64.of_string nb_str, Int64.of_string na_str)
+  | [chain_hash; _; _; _; _; _; _; nb_str; na_str; _] ->
+     Hashtbl.add chain_validities chain_hash (Int64.of_string nb_str, Int64.of_string na_str)
   | _ -> raise (InvalidNumberOfFields 10)
 
 let load_chain_validities ops =
@@ -35,19 +34,16 @@ let load_chain_validities ops =
 
 
 let is_flagged_with chain_sets trust_flag chain_hash =
-  let h = Hashtbl.find chain_sets trust_flag in
-  Hashtbl.mem h chain_hash
+  let s = Hashtbl.find chain_sets trust_flag in
+  StringSet.mem chain_hash s
 
 let is_flagged_and_valid chain_sets chain_validities trust_flag chain_hash timestamp =
-  let h = Hashtbl.find chain_sets trust_flag in
-  let built_chain_numbers = Hashtbl.find_all h chain_hash in
-  let check_validity n =
-    try
-      let nb, na = Hashtbl.find chain_validities (chain_hash, n) in
-      timestamp >= nb && timestamp <= na
-    with Not_found -> false
-  in
-  List.fold_left (||) false (List.map check_validity built_chain_numbers)
+  let s = Hashtbl.find chain_sets trust_flag in
+  if StringSet.mem chain_hash s then begin
+    let validities = Hashtbl.find_all chain_validities chain_hash in
+    let check_validity (nb, na) = timestamp >= nb && timestamp <= na in
+    List.fold_left (||) false (List.map check_validity validities)
+  end else false
 
 
 let inc_in_hashtbl h k =

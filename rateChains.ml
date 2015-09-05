@@ -2,7 +2,7 @@
 
    Inputs:
     - built_chains.csv
-    - trusted_chains.csv
+    - trusted_built_chains.csv
 
    Option:
     - trust_flag
@@ -16,11 +16,13 @@ open Getopt
 open FileOps
 open X509Util
 
+let verbose = ref false
 let data_dir = ref ""
 let trust_flag = ref "trusted"
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
+  mkopt (Some 'v') "verbose" (Set verbose) "print more info to stderr";
 
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
   mkopt (Some 't') "trust-flag" (StringVal trust_flag) "specify the trust flag (trusted by default)";
@@ -65,8 +67,11 @@ let _ =
   try
     let ops = prepare_data_dir !data_dir in
     let trusted_chains = Hashtbl.create 1000 in
-    ops.iter_lines "trusted_chains" (populate_chain_trust trusted_chains);
+
+    ops.iter_lines "trusted_built_chains" (populate_chain_trust trusted_chains);
+    if !verbose then print_endline "trusted_built_chains.csv loaded.";
     ops.iter_lines "built_chains" (rate_chain ops trusted_chains);
+    if !verbose then print_endline "rated_chains.csv written.";
     ops.close_all_files ()
   with
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1
