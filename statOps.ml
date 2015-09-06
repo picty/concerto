@@ -33,24 +33,6 @@ let load_chain_validities ops =
   chain_validities
 
 
-let handle_chain_details_line chain_details = function
-  | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; nb_str; na_str; _] ->
-     let complete = complete_str = "1"
-     and ordered = ordered_str = "1"
-     and n_transvalid = int_of_string n_transvalid_str
-     and n_unused = int_of_string n_unused_str
-     and nb = Int64.of_string nb_str
-     and na = Int64.of_string na_str in
-     let details = complete, ordered, n_unused, n_transvalid, nb, na in
-     Hashtbl.add chain_details chain_h details
-  | _ -> raise (InvalidNumberOfFields 10)
-
-let load_chain_details ops =
-  let chain_details = Hashtbl.create 1000 in
-  ops.iter_lines "built_chains" (handle_chain_details_line chain_details);
-  chain_details
-
-
 type chain_quality =
   | Incomplete
   | Transvalid
@@ -71,6 +53,31 @@ let chain_quality_of_details = function
   | true, true, _, 0, _, _
   | true, false, _, 0, _, _ -> Unordered
   | true, _, _, _, _, _ -> Transvalid
+
+let handle_chain_quality_line chain_details = function
+  | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; nb_str; na_str; _] ->
+     let complete = complete_str = "1"
+     and ordered = ordered_str = "1"
+     and n_transvalid = int_of_string n_transvalid_str
+     and n_unused = int_of_string n_unused_str
+     and nb = Int64.of_string nb_str
+     and na = Int64.of_string na_str in
+     let details = complete, ordered, n_unused, n_transvalid, nb, na in
+     let quality = chain_quality_of_details details in
+     begin
+       try
+         let current_quality, _, _ = Hashtbl.find chain_details chain_h in
+         if compare_chain_quality current_quality quality < 0
+         then Hashtbl.replace chain_details chain_h (quality, nb, na)
+       with Not_found -> Hashtbl.replace chain_details chain_h (quality, nb, na)
+     end
+  | _ -> raise (InvalidNumberOfFields 10)
+
+let load_chain_qualities ops =
+  let chain_qualities = Hashtbl.create 1000 in
+  ops.iter_lines "built_chains" (handle_chain_quality_line chain_qualities);
+  chain_qualities
+
 
 
 let is_flagged_with chain_sets trust_flag chain_hash =

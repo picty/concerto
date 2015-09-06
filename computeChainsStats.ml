@@ -1,8 +1,9 @@
-(* computeStats.ml
+(* computeChainsStats.ml
 
    Inputs:
     - answers.csv
     - trusted_chains.csv
+    - built_chains.csv
 
    Option:
     - campaign id
@@ -40,18 +41,25 @@ let increment campaign trust_flag stat_kind counts v =
   inc_in_hashtbl h v
 
 
-let update_count chain_sets chain_details counts = function
+let update_count chain_sets chain_qualities counts = function
   | [campaign_str; _; _; _; timestamp_str; answer_type; version; ciphersuite; _; _;
      chain_hash; _; _; _; _; _] ->
-     let campaign = int_of_string campaign_str
-     and timestamp = Int64.of_string timestamp_str in
-     let chain_details = Hashtbl.find_all chain_details chain_hash in
-     let check_validity (_, _, _, _, nb, na) = timestamp >= nb && timestamp <= na in
-     let valid_chain_details = List.filter check_validity chain_details in
-     let best_quality = match List.rev (List.sort compare_chain_quality (List.map chain_quality_of_details valid_chain_details)) with
-       | [] -> -1
-       | x::_ -> int_of_chain_quality x
+     let campaign = int_of_string campaign_str in
+     let best_quality =
+       try
+         let q, _, _ = Hashtbl.find chain_qualities chain_hash in
+         int_of_chain_quality q
+       with Not_found -> -1
      in
+     (* TODO: Take timestamp into account *)
+     (* and timestamp = Int64.of_string timestamp_str in *)
+     (* let chain_quality = Hashtbl.find_all chain_details chain_hash in *)
+     (* let check_validity (_, _, _, _, nb, na) = timestamp >= nb && timestamp <= na in *)
+     (* let valid_chain_details = List.filter check_validity chain_details in *)
+     (* let best_quality = match List.rev (List.sort compare_chain_quality (List.map chain_quality_of_details valid_chain_details)) with *)
+     (*   | [] -> -1 *)
+     (*   | x::_ -> int_of_chain_quality x *)
+     (* in *)
 
      let add_for_trust_flag trust_flag =
        increment campaign trust_flag "chain_quality" counts [string_of_int best_quality]
@@ -83,11 +91,11 @@ let _ =
 
     let chain_sets = load_trusted_chains ops !filters in
     if !verbose then print_endline "Trust info loaded.";
-    let chain_details = load_chain_details ops in
+    let chain_qualities = load_chain_qualities ops in
     if !verbose then print_endline "Chain details loaded.";
 
     let counts = Hashtbl.create 10 in
-    ops.iter_lines "answers" (update_count chain_sets chain_details counts);
+    ops.iter_lines "answers" (update_count chain_sets chain_qualities counts);
     Hashtbl.iter (write_one_hashtbl ops) counts;
 
     ops.close_all_files ()
