@@ -77,33 +77,34 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
     (* TODO: Handle broken certificates in a better way? *)
     let unchecked_certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) raw_certs in
 
-    let answer_type, version, ciphersuite, alert_level, alert_type,
+    let answer_type, version, random, ciphersuite, alert_level, alert_type,
         version_compat, suite_compat, compression_compat, extensions_compat,
         secure_renego_supported = match parsed_answer.pa_content with
-      | Empty -> "0", "", "", "", "", "", "", "", "", ""
-      | Junk _ -> "1", "", "", "", "", "", "", "", "", ""
+      | Empty -> "0", "", "", "", "", "", "", "", "", "", ""
+      | Junk _ -> "1", "", "", "", "", "", "", "", "", "", ""
       | SSLv2Handshake {version = v; cipher_specs = []} ->
          let v_int = int_of_tls_version v in
-         "20", string_of_int v_int, "", "", "",
+         "20", string_of_int v_int, "", "", "", "",
            (if is_version_compatible v_int then "1" else "0"), "", "", "", "0"
 
       | SSLv2Alert e ->
-         "10", "2", "", "2", string_of_int (int_of_ssl2_error e), "", "", "", "", ""
+         "10", "2", "", "", "2", string_of_int (int_of_ssl2_error e), "", "", "", "", ""
       | TLSAlert (v, al, at) ->
-         "11", string_of_int (int_of_tls_version v), "",
+         "11", string_of_int (int_of_tls_version v), "", "",
          string_of_int (int_of_tls_alert_level al), string_of_int (int_of_tls_alert_type at),
          "", "", "", "", ""
 
       | SSLv2Handshake {version = v; cipher_specs = c::_} ->
          let v_int = int_of_tls_version v
          and c_int = int_of_ciphersuite c in
-         "20", string_of_int v_int, string_of_int c_int, "", "",
+         "20", string_of_int v_int, "", string_of_int c_int, "", "",
          (if is_version_compatible v_int then "1" else "0"),
          (if is_suite_compatible c_int then "1" else "0"), "1", "1", "0"
       | TLSHandshake h ->
          let v_int = int_of_tls_version h.server_hello_version
+         and r_bstr = h.server_random
          and c_int = int_of_ciphersuite h.ciphersuite in
-         "21", string_of_int v_int, string_of_int c_int, "", "",
+         "21", string_of_int v_int, hexdump r_bstr, string_of_int c_int, "", "",
          (if is_version_compatible v_int then "1" else "0"),
          (if is_suite_compatible c_int then "1" else "0"),
          (if is_compression_compatible (int_of_compression_method h.compression_method) then "1" else "0"),
@@ -120,7 +121,7 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
       ops.write_line "answers" (ip_str ^ campaign ^ answer.name)
         [campaign; ip_str; string_of_int answer.port; answer.name;
          Int64.to_string answer.timestamp;
-         answer_type; version; ciphersuite; alert_level; alert_type;
+         answer_type; version; random; ciphersuite; alert_level; alert_type;
          hexdump chain_hash;
          version_compat; suite_compat; compression_compat; extensions_compat;
          secure_renego_supported

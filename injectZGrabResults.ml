@@ -98,7 +98,7 @@ let handle_one_line stimulus_checks ops json_value =
   and port = 443 (* TODO! *)
   and timestamp = translate_timestamp (get_str_from_json json_value "timestamp") in
 
-  let answer_type, version, ciphersuite, alert_level, alert_type,
+  let answer_type, version, server_random, ciphersuite, alert_level, alert_type,
       version_compat, suite_compat, compression_compat, extensions_compat,
       secure_renego_supported, unchecked_certs =
     try
@@ -107,11 +107,12 @@ let handle_one_line stimulus_checks ops json_value =
            (String.sub error 0 20 = "remote error: alert(")
       then begin
         let alert_str = String.sub error 20 ((String.length error) - 21) in
-        "11", "", "", "2", alert_str, "", "", "", "", "", []
-      end else "1", "", "", "", "", "", "", "", "", "", []
+        "11", "", "", "", "2", alert_str, "", "", "", "", "", []
+      end else "1", "", "", "", "", "", "", "", "", "", "", []
     with NotFound ("error", _) ->
       let sh = get_json json_value "data.tls.server_hello" in
       let version = get_int_from_json sh "version.value"
+      and server_random = get_str_from_json sh "random"
       and ciphersuite = get_int_from_json sh "cipher_suite.value"
       and compression = get_int_from_json sh "compression_method"
       and is_rfc5746_supported = get_bool_from_json sh "secure_renegotiation" in
@@ -130,7 +131,7 @@ let handle_one_line stimulus_checks ops json_value =
       let raw_certs = List.map debase64 (cert_b64::chain_b64) in
       let unchecked_certs = List.map (sc_of_raw_value "" false) raw_certs in
 
-      "21", string_of_int version, string_of_int ciphersuite, "", "",
+      "21", string_of_int version, server_random, string_of_int ciphersuite, "", "",
       (if is_version_compatible version then "1" else "0"),
       (if is_suite_compatible ciphersuite then "1" else "0"),
       (if is_compression_compatible compression then "1" else "0"), "1",
@@ -148,7 +149,7 @@ let handle_one_line stimulus_checks ops json_value =
     ops.write_line "answers" (ip_str ^ campaign ^ name)
       [campaign; ip_str; string_of_int port; name;
        Int64.to_string timestamp;
-       answer_type; version; ciphersuite; alert_level; alert_type;
+       answer_type; version; server_random; ciphersuite; alert_level; alert_type;
        hexdump chain_hash;
        version_compat; suite_compat; compression_compat; extensions_compat;
        secure_renego_supported

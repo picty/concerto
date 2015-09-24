@@ -8,6 +8,7 @@ create table answers(
        timestamp int,
        answer_type int,
        version int,
+       random text,
        ciphersuite int,
        alert_level int,
        alert_type int,
