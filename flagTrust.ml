@@ -110,6 +110,9 @@ let _ =
     let trusted_root_hashes = List.map extract_cert_hash trusted_root_certs in
     let trusted_roots = List.fold_left (fun s e -> StringSet.add e s) StringSet.empty trusted_root_hashes in
     let ops = prepare_data_dir !data_dir in
+    if !verbose then print_endline "roots.csv computed.";
+    StringSet.iter (fun h -> ops.write_line "roots" "" [h]) trusted_roots;
+    if !verbose then print_endline "roots.csv written.";
 
     let trusted_built_chains = ops.iter_lines_accu "built_links" (update_trusted_built_chains trusted_roots) StringPairSet.empty in
     if !verbose then print_endline "trusted_built_chains.csv computed.";
