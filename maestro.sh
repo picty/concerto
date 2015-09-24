@@ -108,7 +108,7 @@ if [ "$TRUSTED_CAS" = "" ]; then
     touch "$DATA_DIR/trusted_certs.csv" "$DATA_DIR/trusted_chains.csv"
     touch "$DATA_DIR/rated_chains.csv"
 else
-    echo "= Flaging trusted certs "
+    echo "= Flagging trusted certs ="
     time "$BIN_DIR/flagTrust" -d "$DATA_DIR" -t "$TRUST_FLAG" --der $TRUSTED_CAS 2> /dev/null
     handle_ret_code
 

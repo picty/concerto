@@ -111,7 +111,7 @@ let build_certchain max_transvalid links certs_hash =
   let rec bottom_up n_ordered n_transvalid ((_, last_hash) as last) chain (next_certs : (int * string) list) =
     let possible_issuers = Hashtbl.find_all links last_hash in
 
-    (* First, we check wether we have hit a self-signed cert *)
+    (* First, we check whether we have hit a self-signed cert *)
     if List.mem last_hash possible_issuers
     then [ last::chain, next_certs, true, n_ordered ]
 
