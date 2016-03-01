@@ -33,6 +33,4 @@ flagTrust
 rateChains
 computeStats
 computeBehaviorStats
-computeStatsV
-computeBehaviorStatsV
 computeChainsStats

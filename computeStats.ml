@@ -20,6 +20,7 @@ open FileOps
 open StatOps
 
 let verbose = ref false
+let load_validity = ref false
 let data_dir = ref ""
 let filters = ref []
 
@@ -29,6 +30,8 @@ let options = [
 
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
   mkopt (Some 'f') "filter" (StringList filters) "add a trust flag to filter";
+
+  mkopt None "load-validity" (Set load_validity) "load validity information";
 ]
 
 
@@ -43,10 +46,11 @@ let increment campaign trust_flag stat_kind counts v =
   inc_in_hashtbl h v
 
 
-let update_count chain_sets counts = function
-  | [campaign_str; _; _; _; _; answer_type; version; ciphersuite; _; _; chain_hash;
+let update_count chain_sets chain_validities counts = function
+  | [campaign_str; _; _; _; timestamp_str; answer_type; version; ciphersuite; _; _; chain_hash;
      version_compat_str; suite_compat_str; compression_compat_str; extensions_compat_str; is_rfc5746_supported] ->
      let campaign = int_of_string campaign_str
+     and timestamp = Int64.of_string timestamp_str
      and answer_compat =
        version_compat_str <> "0" && suite_compat_str <> "0" &&
          compression_compat_str <> "0" && extensions_compat_str <> "0"
@@ -63,8 +67,12 @@ let update_count chain_sets counts = function
      add_for_trust_flag "";
 
      let increment_for_flag trust_flag =
-       if is_flagged_with chain_sets trust_flag chain_hash
-       then add_for_trust_flag trust_flag
+       let result =
+         if !load_validity
+         then is_flagged_with chain_sets trust_flag chain_hash
+         else is_flagged_and_valid chain_sets chain_validities trust_flag chain_hash timestamp
+       in
+       if result then add_for_trust_flag trust_flag
      in
      List.iter increment_for_flag !filters
 
@@ -86,9 +94,16 @@ let _ =
 
     let chain_sets = load_trusted_chains ops !filters in
     if !verbose then print_endline "Trust info loaded.";
+    let chain_validities =
+      if !load_validity then begin
+        let cv = load_chain_validities ops in
+        if !verbose then print_endline "Validity info loaded.";
+        cv
+      end else Hashtbl.create 10
+    in
 
     let counts = Hashtbl.create 10 in
-    ops.iter_lines "answers" (update_count chain_sets counts);
+    ops.iter_lines "answers" (update_count chain_sets chain_validities counts);
     Hashtbl.iter (write_one_hashtbl ops) counts;
 
     ops.close_all_files ()

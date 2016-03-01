@@ -8,7 +8,6 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	computeComponents buildChains \
 	extract-certdata flagTrust rateChains \
 	computeStats computeBehaviorStats \
-	computeStatsV computeBehaviorStatsV \
 	computeChainsStats
 
 listCSVFiles_SRCS := fileOps.ml listCSVFiles.ml
