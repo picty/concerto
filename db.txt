@@ -39,7 +39,7 @@ create table certs(
        isCA integer,
        subject_key_identifier text,
        authority_key_identifier text,
-       authotity_serial_number text
+       authority_serial_number text
 );
 
 create table dns(

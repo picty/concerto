@@ -46,7 +46,7 @@ let options = [
 ]
 
 
-(* It seems that the subjet lists associated to issuers can be very very long,
+(* It seems that the subject lists associated to issuers can be very very long,
    leading to stack overflows. This is why we choose here a different
    structure from the simple Hashtbl in buildChains. *)
 let read_links_by_issuer ops =

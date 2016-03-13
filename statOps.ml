@@ -11,7 +11,7 @@ let handle_trusted_chain_line chain_sets = function
          Hashtbl.replace chain_sets trust_flag (StringSet.add chain_hash s)
        with Not_found -> ()
      end
-  | _ -> raise (InvalidNumberOfFields 3)
+  | _ -> raise (InvalidNumberOfFields 2)
 
 let load_trusted_chains ops trust_flags =
   let chain_sets = Hashtbl.create 10 in
