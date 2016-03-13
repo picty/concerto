@@ -73,8 +73,8 @@ let handle_answer features_by_ip chain_sets chain_validities ip_sets = function
        let flag_ip trust_flag =
          let result =
            if !load_validity
-           then is_flagged_with chain_sets trust_flag chain_hash
-           else is_flagged_and_valid chain_sets chain_validities trust_flag chain_hash timestamp
+           then is_flagged_and_valid chain_sets chain_validities trust_flag chain_hash timestamp
+           else is_flagged_with chain_sets trust_flag chain_hash
          in
          if result then begin
            let ip_set = Hashtbl.find ip_sets trust_flag in

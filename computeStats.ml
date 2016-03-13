@@ -69,8 +69,8 @@ let update_count chain_sets chain_validities counts = function
      let increment_for_flag trust_flag =
        let result =
          if !load_validity
-         then is_flagged_with chain_sets trust_flag chain_hash
-         else is_flagged_and_valid chain_sets chain_validities trust_flag chain_hash timestamp
+         then is_flagged_and_valid chain_sets chain_validities trust_flag chain_hash timestamp
+         else is_flagged_with chain_sets trust_flag chain_hash
        in
        if result then add_for_trust_flag trust_flag
      in
