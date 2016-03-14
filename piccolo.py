@@ -18,7 +18,7 @@ def get_db():
         db.row_factory = make_dicts
     return db
 
-def query_db(fields, tables, joins, conditions, args=[], order_by=[], group_by=[], limit=None):
+def query_db(fields, tables, joins, conditions, args=[], order_by=[], group_by=[], offset=None, limit=None):
     if len(joins) > 0:
         join_str = "join %s" % (", ".join(joins))
     else:
@@ -39,10 +39,14 @@ def query_db(fields, tables, joins, conditions, args=[], order_by=[], group_by=[
         limit_str = ""
     else:
         limit_str = "limit %d" % limit
-    query = ("select %s from %s %s %s %s %s %s" %
+    if offset is None:
+        offset_str = ""
+    else:
+        offset_str = "offset %d" % offset
+    query = ("select %s from %s %s %s %s %s %s %s" %
              (", ".join(fields), ", ".join(tables), join_str, cond_str,
-              group_by_str, order_by_str, limit_str))
-    print query
+              group_by_str, order_by_str, limit_str, offset_str))
+    print query, args
     cur = get_db().execute(query, args)
     rv = cur.fetchall()
     cur.close()
@@ -297,8 +301,8 @@ def chain_by_subject_in_chain(subject):
                          "and bl.built_chain_number = built_chains.built_chain_number",
                        "certs as blc on blc.hash = bl.cert_hash",
                        "dns as bldns on bldns.hash = blc.subject_hash"],
-                      ["bldns.name = ?", "built_chains.built_chain_number = ?"],
-                      [subject, 0], subject, ["bl.chain_hash"])
+                      ["bldns.name LIKE ?", "built_chains.built_chain_number = ?"],
+                      ["%%%s%%" % subject, 0], subject, ["bl.chain_hash"])
 
 # TODO: validite
 
@@ -317,37 +321,41 @@ def tls_version(v):
     else:
         return "Unknown TLS version (%4.4x)" % v
 
-def get_answers(joins, conditions, args, title, group_by_list = []):
+def str_of_answer_type(answer):
+    try:
+        if answer['answer_type'] == 0:
+            return "Empty"
+        elif answer['answer_type'] == 1:
+            return "Junk"
+        elif answer['answer_type'] == 10:
+            return ("SSLv2 Alert (%s)" % answer['alert_type'])
+        elif answer['answer_type'] == 11:
+            return ("%s Alert (%s, %s)" % (tls_version (answer['version']), answer['alert_level'], answer['alert_type']))
+        elif answer['answer_type'] == 20:
+            return ("SSLv2 Handshake (%s)" % answer['ciphersuite'])
+        elif answer['answer_type'] == 21:
+            return ("%s Handshake (%s)" % (tls_version (answer['version']), answer['ciphersuite']))
+        else:
+            return ("Unexpected type (%s)" % answer['answer_type'])
+    except:
+        return "123123132"
+
+def get_answers(joins, conditions, args, title, group_by_list = [], offset=None, limit=None):
     fields = ["answers.name as name", "ip", "port",
               "timestamp", "chain_hash",
               "answer_type", "answers.version as version",
               "ciphersuite", "alert_level", "alert_type"]
     tables = ["answers"]
-    rv = query_db (fields, tables, joins, conditions, args, group_by = group_by_list)
+    rv = query_db (fields, tables, joins, conditions, args, group_by = group_by_list, offset=offset, limit=limit)
     if rv:
-        if len(rv) == 1:
-            answer = rv[0]
-
+        for answer in rv:
             answer["timestamp_str"] = time_str (int(answer["timestamp"]))
+            answer['type_str'] = str_of_answer_type(answer)
 
-            if answer['answer_type'] == 0:
-                answer['type_str'] = "Empty"
-            elif answer['answer_type'] == 1:
-                answer['type_str'] = "Junk"
-            elif answer['answer_type'] == 10:
-                answer['type_str'] = "SSLv2 Alert (%s)" % answer['alert_type']
-            elif answer['answer_type'] == 11:
-                answer['type_str'] = "%s Alert (%s, %s)" % (tls_version (answer['version']), answer['alert_level'], answer['alert_type'])
-            elif answer['answer_type'] == 20:
-                answer['type_str'] = "SSLv2 Handshake (%s)" % answer['ciphersuite']
-            elif answer['answer_type'] == 21:
-                answer['type_str'] = "%s Handshake (%s)" % (tls_version (answer['version']), answer['ciphersuite'])
-            else:
-                answer['type_str'] = "Unexpected type (%s)" % answer['answer_type']
-
-            return render_template ("answer.html", answer=answer, title=title)
+        if len(rv) == 1:
+            return render_template ("answer.html", answer=rv[0], title=title)
         else:
-            abort(404) #return render_template ("certificates.html", certs = rv, title = title)
+            return render_template ("answers.html", answers=rv, title=title)
     else:
         abort(404)
 
@@ -357,6 +365,12 @@ def answer_by_ip(cid, ip):
 #    return get_certs (["names on names.cert_hash = certs.hash"],
 #                      ["names.name LIKE ?"], ["%" + name + "%"], name, ["certs.hash"])
 
+@app.route('/answers/<cid>/all/<int:start>/<int:n>')
+def answer_by_number(cid, start, n):
+    print "COUCOU"
+    return get_answers ([], ["answers.campaign = ?"], [cid], "Answers in campaign %s (%d - %d)" % (cid, start, n),
+                        offset=start, limit=n)
+    
 
 
 if __name__ == '__main__':

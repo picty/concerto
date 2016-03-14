@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <title>{{ title | escape }}</title>
+  </head>
+  <body>
+    <h1>{{ title | escape }}</h1>
+
+    <table border="1">
+      <tr>
+        <th>Name</th>
+        <th>IP</th>
+        <th>Port</th>
+        <th>Timestamp</th>
+        <th>Answer Type</th>
+        <th>Certificate Chain</th>
+      </tr>
+
+      {%- for answer in answers %}
+      <tr>
+        <td>{{ answer.name | escape }}</td>
+        <td>{{ answer.ip | escape }}</td>
+        <td>{{ answer.port | escape }}</td>
+        <td>{{ answer.timestamp_str | escape }}</td>
+        <td>{{ answer.type_str | escape }}</td>
+        <td><a href="{{ '/chains/by-hash/' + answer.chain_hash + '/0' }}">{{ answer.chain_hash }}</a></td>
+      </tr>
+      {%- endfor %}
+
+  </body>
+</html>
