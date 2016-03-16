@@ -77,7 +77,7 @@ let read_certs_info ops =
   let certs_info = Hashtbl.create 1000 in
   let read_certs_aux = function
     | [cert_h; _version; _serial; _subject; _issuer; not_before; not_after;
-       key; modulus; _exp; _isCA; _ski; _aki_ki; _aki_serial] ->
+       key; modulus; _exp; _isCA; _ski; _aki_ki; _aki_serial; _sign_algo] ->
        Hashtbl.add certs_info cert_h (Int64.of_string not_before, Int64.of_string not_after, key_typesize key modulus)
     | _ -> raise (InvalidNumberOfFields 14)
   in

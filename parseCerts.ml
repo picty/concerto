@@ -73,6 +73,23 @@ let populate_certs_table v1cas ops sc =
         | _ -> "", ""
       in
 
+      let sign_algo = match c.tbsCertificate.signature.algorithmId with
+        | [42;840;113549;1;1;2] -> "rsa-md2"
+        | [42;840;113549;1;1;3] -> "rsa-md4"
+        | [42;840;113549;1;1;4] -> "rsa-md5"
+        | [43;14;3;2;29]
+        | [42;840;113549;1;1;5] -> "rsa-sha1"
+        | [42;840;113549;1;1;11] -> "rsa-sha256"
+        | [42;840;113549;1;1;12] -> "rsa-sha384"
+        | [42;840;113549;1;1;13] -> "rsa-sha512"
+        | [42;840;113549;1;1;14] -> "rsa-sha224"
+        | [42;840;10040;4;3] -> "dsa-sha1"
+        | [96;840;1;101;3;4;3;1] -> "dsa-sha224"
+        | [96;840;1;101;3;4;3;2] -> "dsa-sha256"
+        | [42;840;10045;4;3;3] -> "ecdsa-sha384"
+        | l -> Asn1PTypes.string_of_oid l
+      in
+
       let names_extracted = extract_dns_and_ips c in
 
       ops.write_line "certs" h [
@@ -90,6 +107,7 @@ let populate_certs_table v1cas ops sc =
         ski;
         aki_ki;
         aki_serial;
+        sign_algo;
       ];
 
       if ops.check_key_freshness "dns" subject_hash
