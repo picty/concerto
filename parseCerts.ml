@@ -142,6 +142,7 @@ let handle_one_prefix v1cas ops prefix =
 
 
 let _ =
+  relax_x509_constraints ();
   (* TODO: Rewrite this when we have a proper list_all_files operation *)
   let prefixes = parse_args ~progname:"parseCerts" options Sys.argv in
   if !data_dir = "" then usage "parseCerts" options (Some "Please provide a valid data directory");

@@ -14,11 +14,14 @@ open FileOps
 open X509Util
 
 let data_dir = ref ""
+let accept_v1_cas_option = ref false
 let suffix = ref ""
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
+  mkopt (Some 'n') "dont-accept-version1-ca" (Clear accept_v1_cas_option) "do not accept X.509v1 certificates as CA";
+  mkopt (Some '1') "accept-version1-ca" (Set accept_v1_cas_option) "accept X.509v1 certificates as CA";
 
   mkopt None "suffix" (StringVal suffix) "adds a suffix to the CSV files used";
 ]
@@ -34,6 +37,9 @@ let check_one_line ops links_filename = function
 
 
 let _ =
+  relax_x509_constraints ();
+  accept_v1_cas := !accept_v1_cas_option;
+
   (* TODO: Check that this _ is [] *)
   let _ = parse_args ~progname:"checkLinks" options Sys.argv in
   if !data_dir = "" then usage "checkLinks" options (Some "Please provide a valid data directory");

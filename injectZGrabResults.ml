@@ -16,7 +16,6 @@
 open Parsifal
 open Getopt
 open TlsEnums
-open X509Util
 open FileOps
 open Stimulus
 module Calendar = CalendarLib.Calendar;;
@@ -129,7 +128,8 @@ let handle_one_line stimulus_checks ops json_value =
         Base64.parse_base64_container Base64.NoHeader "" BasePTypes.parse_rem_string i
       in
       let raw_certs = List.map debase64 (cert_b64::chain_b64) in
-      let unchecked_certs = List.map (sc_of_raw_value "" false) raw_certs in
+      (* TODO: Use a more generic file/hash facility? *)
+      let unchecked_certs = List.map (X509Util.sc_of_raw_value "" false) raw_certs in
 
       "21", string_of_int version, server_random, string_of_int ciphersuite, "", "",
       (if is_version_compatible version then "1" else "0"),
@@ -142,7 +142,7 @@ let handle_one_line stimulus_checks ops json_value =
   let chain_hash =
     if unchecked_certs = []
     then ""
-    else CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc unchecked_certs))
+    else CryptoUtil.sha1sum (String.concat "" (List.map X509Util.hash_of_sc unchecked_certs))
   in
 
   if ops.check_key_freshness "answers" (ip_str ^ campaign ^ name) then begin
@@ -157,11 +157,11 @@ let handle_one_line stimulus_checks ops json_value =
 
     if ops.check_key_freshness "chains" (hexdump chain_hash) then begin
       List.iteri (fun i -> fun sc -> ops.write_line "chains" (hexdump chain_hash)
-        [hexdump chain_hash; string_of_int i; hexdump (hash_of_sc sc)]) unchecked_certs;
+        [hexdump chain_hash; string_of_int i; hexdump (X509Util.hash_of_sc sc)]) unchecked_certs;
     end
   end;
 
-  let save_cert sc = ops.dump_file "certs" (hexdump (hash_of_sc sc)) (raw_value_of_sc sc)
+  let save_cert sc = ops.dump_file "certs" (hexdump (X509Util.hash_of_sc sc)) (X509Util.raw_value_of_sc sc)
   in List.iter save_cert unchecked_certs
 
 

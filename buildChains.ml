@@ -243,6 +243,7 @@ let handle_chains_file links certs_info ops =
 
 
 let _ =
+  relax_x509_constraints ();
   (* TODO: Check that this _ is [] *)
   let _ = parse_args ~progname:"buildChains" options Sys.argv in
   if !data_dir = "" then usage "buildChains" options (Some "Please provide a valid data directory");

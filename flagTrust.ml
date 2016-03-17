@@ -20,7 +20,6 @@
 open Parsifal
 open Getopt
 open FileOps
-open X509Util
 
 module StringSet = Set.Make(String)
 
@@ -64,8 +63,8 @@ let read_links_by_issuer ops =
   links
 
 let extract_cert_hash cert_filename =
-  let sc = sc_of_input !base64 false (string_input_of_filename cert_filename) in
-  hexdump (hash_of_sc sc)
+  let sc = X509Util.sc_of_input !base64 false (string_input_of_filename cert_filename) in
+  hexdump (X509Util.hash_of_sc sc)
 
 let update_trusted_built_chains trusted_roots trusted_built_chains = function
   | [chain_hash; chain_number; _; _; cert_hash] ->

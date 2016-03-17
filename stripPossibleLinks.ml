@@ -10,7 +10,6 @@
 open Parsifal
 open Getopt
 open FileOps
-open X509Util
 
 let data_dir = ref ""
 

@@ -14,7 +14,6 @@
 open Parsifal
 open Getopt
 open FileOps
-open X509Util
 
 let verbose = ref false
 let data_dir = ref ""

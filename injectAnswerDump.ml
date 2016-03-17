@@ -21,7 +21,6 @@ open AnswerDump
 open Ssl2
 open Tls
 open TlsEnums
-open X509Util
 open AnswerDumpUtil
 open FileOps
 open Stimulus
@@ -75,7 +74,7 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
       | _ -> []
     in
     (* TODO: Handle broken certificates in a better way? *)
-    let unchecked_certs = List.mapi (sc_of_cert_in_hs_msg false ip_str) raw_certs in
+    let unchecked_certs = List.mapi (X509Util.sc_of_cert_in_hs_msg false ip_str) raw_certs in
 
     let answer_type, version, random, ciphersuite, alert_level, alert_type,
         version_compat, suite_compat, compression_compat, extensions_compat,
@@ -115,7 +114,7 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
     let chain_hash =
       if unchecked_certs = []
       then ""
-      else CryptoUtil.sha1sum (String.concat "" (List.map hash_of_sc unchecked_certs))
+      else CryptoUtil.sha1sum (String.concat "" (List.map X509Util.hash_of_sc unchecked_certs))
     in
     if ops.check_key_freshness "answers" (ip_str ^ campaign ^ answer.name) then begin
       ops.write_line "answers" (ip_str ^ campaign ^ answer.name)
@@ -129,10 +128,10 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
 
       if ops.check_key_freshness "chains" (hexdump chain_hash) then begin
 	List.iteri (fun i -> fun sc -> ops.write_line "chains" (hexdump chain_hash)
-	  [hexdump chain_hash; string_of_int i; hexdump (hash_of_sc sc)]) unchecked_certs;
+	  [hexdump chain_hash; string_of_int i; hexdump (X509Util.hash_of_sc sc)]) unchecked_certs;
       end;
 
-      let save_cert sc = ops.dump_file "certs" (hexdump (hash_of_sc sc)) (raw_value_of_sc sc)
+      let save_cert sc = ops.dump_file "certs" (hexdump (X509Util.hash_of_sc sc)) (X509Util.raw_value_of_sc sc)
       in List.iter save_cert unchecked_certs
     end;
     handle_one_file get_campaign stimulus_checks ops input

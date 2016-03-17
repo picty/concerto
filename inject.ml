@@ -9,7 +9,6 @@
 
 open Parsifal
 open Getopt
-open X509Util
 open FileOps
 
 
@@ -23,18 +22,20 @@ let options = [
 ]
 
 let rec handle_one_file ops filename =
-  let raw_cert = get_file_content filename in
-  let sc = sc_of_raw_value filename false raw_cert in
-  ops.dump_file !filetype (hexdump (hash_of_sc sc)) (raw_value_of_sc sc)
+  let raw_file = get_file_content filename in
+  (* TODO: Why use a sc here? This could be anything, not only a certificate *)
+  (* The only advantage is that we guarantee the use of the same hash function... *)
+  let sc = X509Util.sc_of_raw_value filename false raw_file in
+  ops.dump_file !filetype (hexdump (X509Util.hash_of_sc sc)) raw_file
 
 
 let _ =
-  let cert_files = parse_args ~progname:"inject" options Sys.argv in
+  let raw_files = parse_args ~progname:"inject" options Sys.argv in
   if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
   if !filetype = "" then usage "inject" options (Some "Please provide a type");
   try
     let ops = prepare_data_dir !data_dir in
-    List.iter (handle_one_file ops) cert_files;
+    List.iter (handle_one_file ops) raw_files;
     ops.close_all_files ()
   with
     | e ->
