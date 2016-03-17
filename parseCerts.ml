@@ -2,6 +2,7 @@
 
    Inputs:
     - certs/
+    - v1cas.csv
 
    Argument:
     - prefixes (00-ff)
@@ -27,8 +28,10 @@ let options = [
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
 ]
 
+module StringSet = Set.Make(String)
 
-let populate_certs_table ops sc =
+
+let populate_certs_table v1cas ops sc =
   let h = hash_of_sc sc in
   if ops.check_key_freshness "certs" h && ops.check_key_freshness "unparsed_certs" h then begin
     try
@@ -55,6 +58,11 @@ let populate_certs_table ops sc =
         with Failure "validity_of_sc" -> -1L, -1L
       in
 
+      let is_ca = match get_basicConstraints c.tbsCertificate.extensions with
+        | Some ({X509Extensions.cA = Some true}, _) -> "1"
+        | _ -> if StringSet.mem (hexdump h) v1cas then "1" else "0"
+      in
+
       let ski = match get_subjectKeyIdentifier c.tbsCertificate.extensions with
         | Some (ski, _) -> hexdump ski
         | None -> ""
@@ -78,9 +86,7 @@ let populate_certs_table ops sc =
         key_type;
         rsa_modulus;
         rsa_exponent;
-        (match get_basicConstraints c.tbsCertificate.extensions with
-        | Some ({X509Extensions.cA = Some true}, _) -> "1"
-        | _ -> "0");
+        is_ca;
         ski;
         aki_ki;
         aki_serial;
@@ -107,12 +113,12 @@ let populate_certs_table ops sc =
       ops.write_line "unparsed_certs" h [hexdump h; Printexc.to_string e]
   end
 
-let handle_one_prefix ops prefix =
+let handle_one_prefix v1cas ops prefix =
   let files = ops.list_files_by_prefix "certs" prefix in
   let handle_one_file (name, _, _) =
     let raw_contents = ops.read_file "certs" name in
     let sc = sc_of_raw_value name false raw_contents in
-    populate_certs_table ops sc
+    populate_certs_table v1cas ops sc
   in
   List.iter handle_one_file files
 
@@ -121,9 +127,14 @@ let _ =
   (* TODO: Rewrite this when we have a proper list_all_files operation *)
   let prefixes = parse_args ~progname:"parseCerts" options Sys.argv in
   if !data_dir = "" then usage "parseCerts" options (Some "Please provide a valid data directory");
+  let add_v1ca set = function
+    | [s] -> StringSet.add s set
+    | _ -> raise (InvalidNumberOfFields 1)
+  in
   try
     let ops = prepare_data_dir !data_dir in
-    List.iter (handle_one_prefix ops) prefixes;
+    let v1cas = ops.iter_lines_accu "v1cas" add_v1ca StringSet.empty in
+    List.iter (handle_one_prefix v1cas ops) prefixes;
     ops.close_all_files ()
   with
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h); exit 1

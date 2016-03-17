@@ -85,6 +85,10 @@ if [ "$TRUSTED_CAS" != "" ]; then
     echo "= Injecting certs ="
     time "$BIN_DIR/inject" -d "$DATA_DIR" -t certs $TRUSTED_CAS
     handle_ret_code
+
+    echo "= Marking v1 trusted certs ="
+    time "$BIN_DIR/listV1certs" -d "$DATA_DIR" $TRUSTED_CAS
+    handle_ret_code
 fi
 
 echo "= Parsing certs ="
