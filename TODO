@@ -1,69 +1,141 @@
-= v1.0 milestone =
- - Ensure concerto builds against the master branch on GitHub of parsifal
- - Write a micro-tutorial?
- - Rewrite maestro to be more modular (Makefile? different options?)
- - Add support for campaign ids / stimuli in maestro.
-
- - Add UUIDv5 (sha1 + namespace) to replace hashes (including as key for binary storage)
- - Improve CSV format (do not quote integer, hash or empty field!)
- - Add support to probe a server easily
- - Explicit implicit assumptions (buildChains relies on chains to be contiguous!)
- - Add support for table versionning (schemas should be put in DATA_DIR)
- - Add support for fileOps backend versionning (for the moment, we use csv+packs but there should be other backends)
-
- - Write scripts to automate NSS store retrieval
- - Improve -v on every program (to understand better some problems, some sizes)
- - All these options should be factored and pushed into fileOps?
- - Improve arg handling in general
-
- - Bug: Why does injectAnswers open all files?
- - Bug? Handle "FAILURE: TODO" and "FAILURE: SSLv3 PRF" in injectAD
- - Bug: in stats, lines where kind is neither O, A, S or W. There are a lot with 101
+= Packaging =
+ - [All] Ensure concerto builds against the master branch on GitHub of parsifal (and the supported environments: Debian stable, sid and opam)
+ - [All] Update AUTHORS, INSTALL, README, license
 
 
+= General =
+ - [1.0] Improve -v on every program (to understand better some problems, some sizes)
+ - [1.0] Write unit tests to check backend
+ - [1.0] Write unit tests for each program
+ - [1.0] Add a non-regression framework...
+ - [?] Improve arg handling in general and factor what should be (into fileOps for backend option)
+ - [?] Allow for progressive enrichment (links, revocation, chains)
+ - [?] Document the different tools (beyond the dot file)
+ - [?] Write a mini-tutorial
 
 
-= Next steps =
+= maestro =
+ - [1.0] Rewrite maestro to be more modular (Makefile? different options?) and to handle ZGrab, multiple campaigns, stimuli
+ - [1.0] Add a operations csv file containing the programs called (with their options) + timestamps (start/end)
+ - [?] Provide a finer-grain timing of db operation
+
+
+= data backend =
+ - [1.0] Write a clean interface allowing for different backends (in particular, it should be possible to incorporate table schemas and optimized representations)
  - Include keys, fields, etc. in a table description to generate schemas and help re-open a file with the correct constraints
- - Optimize flagTrust (it is long and uses a lot of memory!
-$ time ~/dev/research/concerto/flagTrust -t ev --der -d all-campaigns--max-transvalid-3/ 2014-03-mozilla-ev-certs/*
-real    29m53.423s
-user    22m10.792s
-sys     0m21.964s
-yeye@fry:/mnt/ssl-data-new/analysis/2015-05$ time ~/dev/research/concerto/flagTrust -t trusted --der -d all-campaigns--max-transvalid-3/ 2014-03-mozilla-trusted-certs/*
-real    83m12.053s
-user    24m18.924s
-sys     0m39.128s
+ - [1.0] Add an option to avoid modifying files
+   * some files should be appendable (and it might be specified inside the schema) => key check on reopening
+   * some files should be safeguarded in another manner (check for campaign collision for answers)
+ - [1.0] Add a way to open certs RO (needed for checkLinks to be run in parallel)
+ - [1.0] Remove useless strings (enums) to reduce the file size (this might be part of the fileOps and use of a schema)
+ - [1.0] Improve CSV format (do not quote integer, hash or empty field!)
+ - [1.0] Rethink the data structures (Hashtbl should not have large lists, and we should use sets instead of Hashtbl when possible) + use a binary representation in OCaml for hashes (abstract type Hash.t)
+ - [1.0] Optimize storage (internally use binary hashes, binary representation instead of csv?, SQL types and indexes?) => provide a fileOps interface and several implementations (csv, bin-csv, compressed, concurrent-bin-csv, others)
+ - [?] In general, progs should supply a --suffix option and warn if a file is going to be appended
+ - [?] Add support for table versionning (schemas should be put in DATA_DIR)
+ - [?] Add support for fileOps backend versionning (for the moment, we use csv+packs but there should be other backends)
+ - [?] Use reload_keys in each program (for now it is only used for injectAD/chains.csv)
+ - [?] Test it!
+ - [?] Add --skip-reloading-keys-for <string> => string list (use with caution)
+ - [?] Add an index for raw/ files (see below)
+ - [?] Add some features to fileOps (see TODO inside)
+ - [?] Add UUIDv5 (sha1 + namespace) to replace hashes (including as key for binary storage)
+ - [?] Write a duplicate data-dir function
+ - [?] Add the possibility to read certs binary files in read-only mode
 
- - use reload_keys in each program (for now it is only used for injectAD/chains.csv)
- - test it!
- - add --skip-reloading-keys-for <string> => string list (use with caution)
 
- - Improve behavior stats?
+= extract-nss-truststore =
+ - [1.0] Write scripts to automate NSS store retrieval
 
- - Add relevant indices for trusted_certs/trusted_chains/rated_chains
- - Rethink the data structures (Hashtbl should not have large lists, and we should use sets instead of Hashtbl when possible) + use a binary representation in OCaml for hashes (abstract type Hash.t)
 
- - Add a tool to probe server with a given client_hello
- - Add a tool to retrieve CRLs
- - Rewrite piccolo (js, limit some stuff when it's too long)
+= injectAnswerDump/injectZGrab =
+ - [1.0] Bug: Why does injectAnswers open all files at once?
+ - [1.0] Bug? Handle "FAILURE: TODO" and "FAILURE: SSLv3 PRF" in injectAD
+ - [1.0] Add checks to verify the conformity of an answer to the stimulus (a priori done)
+ - [1.0] Add a --filter option for inject{AnswerDump,ZGrabResults}
+   * filter by IP prefix or by hostname (SNI)
+ - [1.0 Factor some code in inject{AnswerDump,ZGrabResults}
+ - [?] Handle warning-level "Unrecognized name" alerts preceding valid handshake messages
+ - [?] Add support to avoid campaign collision when injecting...
+ - [?] Add TLS version for alert messages
+
+
+= certificates and related data =
+ - [1.0] Add support for other files from scans.io (_hosts + _certs), in an incremental way
+ - [?] Add support for factored keys for example
+ - [?] Add support for revocation
+ - [?] Add support for arbitrary trust anchors (at rendering level)
+ - [?] Add support for name constraints (and the possibility to add them in the db)
+ - [?] Add a check for the correspondance of the name with certificate HTTPS names
+
+
+= parseCerts =
+ - [1.0] Find a way to handle parallel parsing without dupes (maybe requiring a concurrent data backend)
+ - [?] Properly handle UTF-16 when writing dns.csv
+
+
+= checkLinks =
+ - [1.0] Find a way to handle parallel parsing without dupes (maybe requiring a concurrent data backend)
+ - [?] Relax the AKI => no SKI constraint?
+
+
+= buildChains =
+ - [?] Explicit implicit assumptions (buildChains relies on chains to be contiguous!)
+
+
+= rateChains =
+ - [?] Add support for crypto algos in concerto grades
+
+
+= DB injection =
+ - [?] Allow for DB reuse (with different campaign ids)
+ - [?] New tool to check DB internal consistency (n_transvalid is duplicated for example)
+ - [?] Allow for different back-ends (sqlite, pgsql)
+ - [?] Add relevant indices for trusted_certs/trusted_chains/rated_chains
+
+
+= piccolo =
+ - [1.0] Rewrite piccolo (js, limit some stuff when it's too long)
    * essentially add a path for each table
    * add support for partial info (no answer_dump, no stimulus, ...)
    * add search fields
    * add random samples
- - Write a clean merge to help parallel executions
-   * iter_lines on all CSV to add to the new
-   * possibility on the command line to indicate which file should be checked for dupes (complete line or some "key" fields), e.g. chains?
-   * iter on filetypes to cp.
- - Add options for parseCerts (-out-prefix) and for merge (-in-prefix) to allow parallel tools on the same directory
- - Find a way to handle transitive_links
- - Try it on a whole campaign and see what needs improvements!
+ - [?] Provide French templates (using cookies to retain the language?)
+ - [1.0] Add support to filter by campaign
+ - [1.0] Add support to only show certain parts of the HTML and/or limit the depth of the queries
+ - [?] Use Bootstrap to render the results properly
+ - [?] Add support for arbitrary trust anchors (at rendering level)
+ - [?] Add more params (filters) and clickable links everywhere
+ - [?] Add more info for trusted flags (in chains/answers/certs/graphs pages)
+ - [?] Add a cache of recently computed graphs
+ - [?] Better explain the grades?
+ - [?] Add more checks and reports/dashboards
 
 
-= Various TODO in concerto-ng =
- - Add an index to raw (see below)
- - Add some features to fileOps (see TODO inside)
- - Optimize storage (internally use binary hashes, binary representation instead of csv?, SQL types and indexes?) => provide a fileOps interface and several implementations (csv, bin-csv, compressed, others)
+= Data gathering =
+ - [?] Add support to probe a server easily with a given client_hello
+ - [?] Proper support for multiple A records when resolving names
+ - [?] Add tools to probe a list (adapt probe_server)
+ - [?] Add tools to extract IPs and names from a database, possibly subject to some conditions (campaign id)
+ - [?] Add a tool to retrieve CRLs
+
+
+= stats =
+ - [1.0] Bug: in stats, lines where kind is neither O, A, S or W. There are a lot with 101
+
+
+= flagTrust =
+ - [?] Optimize flagTrust (it is long and uses a lot of memory!
+
+
+= generate-transitive-links =
+ - [?] Move links/built_links (or their db representation) into a graph db ?
+ - [?] Find a way to handle transitive_links => use a graph-oriented db?
+
+
+
+
+
 
 
 
@@ -87,7 +159,6 @@ When closing all
  - for each dirty filetype
  - rewrite the index
  - remove raw/certs.index.bak
-
 
 This would allow for
  - better perfs
