@@ -124,6 +124,10 @@ create table rated_chains(
        grade text
 );
 
+create table roots(
+	cert_hash text,
+	trust_flag text
+);
 
 -- Import
 
@@ -142,6 +146,7 @@ create table rated_chains(
 .import trusted_chains.csv trusted_chains
 .import trusted_built_chains.csv trusted_built_chains
 .import rated_chains.csv rated_chains
+.import roots.csv roots
 
 
 -- Indexes
@@ -186,6 +191,8 @@ create index unused_certs_cert_idx on unused_certs (cert_hash);
 --create index trusted_built_chains_idx
 
 --create index rated_chains_idx
+
+--create index root_hash_idx
 
 
 -- Transitive links computation (should not be done on a big campaign)
