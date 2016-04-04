@@ -13,16 +13,11 @@ open FileOps
 let verbose = ref false
 let in_data_dir = ref ""
 let out_data_dir = ref ""
-let filter_ip_hash = ref None
+let selected_ips = Hashtbl.create 100
+let selected_chain_hashes = Hashtbl.create 100
+let selected_https_names = ref []
 
-let load_filter_ips_from_file filename =
-  let h = match !filter_ip_hash with
-    | None ->
-       let table = Hashtbl.create 100 in
-       filter_ip_hash := Some table;
-       table
-    | Some table -> table
-  in
+let load_strings h filename =
   let f = open_in filename in
   try
     while true do
@@ -38,15 +33,41 @@ let options = [
   mkopt (Some 'd') "data-dir" (StringVal out_data_dir) "set the data directory";
   mkopt (Some 'i') "in-data-dir" (StringVal in_data_dir) "set the source data directory";
 
-  mkopt None "filter-by-ip" (StringFun load_filter_ips_from_file) "filter using a list of ips";
-(* TODO: filter-by-chain" *)
-(* TODO: filter-by-trust-flag *)
-(* TODO: filter-by-name" *)
+  mkopt None "filter-by-ip" (StringFun (load_strings selected_ips)) "filter using a list of ips";
+  mkopt None "filter-by-chain-hash" (StringFun (load_strings selected_chain_hashes)) "filter using a list of ips";
+  mkopt None "filter-by-https-name" (StringList selected_https_names) "filter using a regexp in certificate server names (CN or SAN)" (* TODO: Choose which type? *)
+  (* TODO: filter-by-trust-flag *)
+  (* TODO: filter-by-hostname *)
 ]
 
+
 let filter_by_ip ip_h = function
-  | (_::ip_str::_) -> Hashtbl.mem ip_h ip_str
+  | _::ip_str::_ -> Hashtbl.mem ip_h ip_str
   | _ -> false
+
+let filter_by_chain_hash chains_h = function
+  | _::_::_::_::_::_::_::_::_::_::_::chain_hash::_ -> Hashtbl.mem chains_h chain_hash
+  | _ -> false
+
+let add_chains_from_name_regex chains_to_populate in_ops re =
+  let regex = Str.regexp re in
+  let filter_names accu = function
+    | h::_::n::_ ->
+       if Str.string_match regex n 0
+       then begin print_endline n; StringSet.add h accu; end
+       else accu
+    | _ -> accu
+  in
+  let selected_certs = in_ops.iter_lines_accu "names" filter_names StringSet.empty in
+  let filter_chains = function
+    | h::"0"::cert_hash::_ ->
+       if StringSet.mem cert_hash selected_certs
+       then Hashtbl.add chains_to_populate h ()
+    | _ -> ()
+  in
+  in_ops.iter_lines "chains" filter_chains
+
+
 
 let handle_answers out_ops filter_fun chains a =
   if filter_fun a then begin
@@ -101,19 +122,29 @@ let _ =
     let in_ops = prepare_data_dir !in_data_dir
     and out_ops = prepare_data_dir !out_data_dir in
 
-    let filter_fun = match !filter_ip_hash with
-      | None -> usage "filterDataDir" options (Some "Please provide a valid filter strategy (or simply use cp?)");
-      | Some h -> filter_by_ip h
+    List.iter (add_chains_from_name_regex selected_chain_hashes in_ops) !selected_https_names;
+    let filter_fun = match Hashtbl.length selected_ips, Hashtbl.length selected_chain_hashes with
+      | 0, 0 -> usage "filterDataDir" options (Some "Please provide a valid filter strategy with a non-empty list");
+      | _, 0 -> filter_by_ip selected_ips
+      | 0, _ -> filter_by_chain_hash selected_chain_hashes
+      | _, _ -> (fun a -> filter_by_ip selected_ips a || filter_by_chain_hash selected_chain_hashes a)
     in
+    if !verbose then prerr_endline "Filters prepared";
 
     let filtered_chains = in_ops.iter_lines_accu "answers" (handle_answers out_ops filter_fun) StringSet.empty in
+    if !verbose then prerr_endline "Chains filtered";
+
     let filtered_certs =
       in_ops.iter_lines_accu "roots" add_root (in_ops.iter_lines_accu "chains" (handle_chains out_ops filtered_chains) StringSet.empty)
     in
+    if !verbose then prerr_endline "Certificates filtered";
+
     let filtered_dns = in_ops.iter_lines_accu "certs" (handle_certs out_ops filtered_certs) StringSet.empty in
+    if !verbose then prerr_endline "DNs filtered";
 
     let save_cert h = out_ops.dump_file "certs" h (in_ops.read_file "certs" h) in
     StringSet.iter save_cert filtered_certs;
+    if !verbose then prerr_endline "Raw certificates copied";
     
     in_ops.iter_lines "links" (handle_links (out_ops.write_line "links" "") filtered_certs);
     (* TODO: transitive_links? *)
