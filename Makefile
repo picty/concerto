@@ -9,7 +9,8 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	computeComponents buildChains \
 	extract-certdata flagTrust rateChains \
 	computeStats computeBehaviorStats \
-	computeChainsStats
+	computeChainsStats \
+	filterDataDir
 
 listCSVFiles_SRCS := fileOps.ml listCSVFiles.ml
 writeLine_SRCS := fileOps.ml writeLine.ml
@@ -45,6 +46,8 @@ rateChains_SRCS := fileOps.ml rateChains.ml
 computeStats_SRCS := concertoUtils.ml fileOps.ml statOps.ml computeStats.ml
 computeBehaviorStats_SRCS := concertoUtils.ml fileOps.ml statOps.ml computeBehaviorStats.ml
 computeChainsStats_SRCS := concertoUtils.ml fileOps.ml statOps.ml computeChainsStats.ml
+
+filterDataDir_SRCS := concertoUtils.ml fileOps.ml filterDataDir.ml
 
 # comment this line if not using camlp4
 # USE_CAMLP4 = yes

@@ -35,3 +35,4 @@ computeStats
 computeBehaviorStats
 computeChainsStats
 listV1certs
+filterDataDir
