@@ -12,6 +12,7 @@
     - stats_behavior_<campaigns>_<values>.csv
  *)
 
+open ConcertoUtils
 open Getopt
 open FileOps
 open StatOps

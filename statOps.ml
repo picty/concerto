@@ -1,7 +1,5 @@
+open ConcertoUtils
 open FileOps
-
-module StringSet = Set.Make(String)
-
 
 let handle_trusted_chain_line chain_sets = function
   | [chain_hash; trust_flag] ->

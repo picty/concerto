@@ -42,9 +42,9 @@ extract-certdata_SRCS := extract-certdata.ml
 flagTrust_SRCS := fileOps.ml flagTrust.ml
 rateChains_SRCS := fileOps.ml rateChains.ml
 
-computeStats_SRCS := fileOps.ml statOps.ml computeStats.ml
-computeBehaviorStats_SRCS := fileOps.ml statOps.ml computeBehaviorStats.ml
-computeChainsStats_SRCS := fileOps.ml statOps.ml computeChainsStats.ml
+computeStats_SRCS := concertoUtils.ml fileOps.ml statOps.ml computeStats.ml
+computeBehaviorStats_SRCS := concertoUtils.ml fileOps.ml statOps.ml computeBehaviorStats.ml
+computeChainsStats_SRCS := concertoUtils.ml fileOps.ml statOps.ml computeChainsStats.ml
 
 # comment this line if not using camlp4
 # USE_CAMLP4 = yes
