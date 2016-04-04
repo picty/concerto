@@ -2,10 +2,13 @@
 
 import sqlite3, sys
 from datetime import datetime
-from flask import g, Flask, render_template, abort, session
+from flask import g, Flask, render_template, abort, session, redirect, url_for
 app = Flask(__name__)
 
 DATABASE = sys.argv[1]
+
+trust_flag = "trusted" # TODO: Add code to choose the default trust flag
+
 
 def make_dicts(cursor, row):
     return dict((cursor.description[idx][0], value)
@@ -240,12 +243,19 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
             unused_certs = query_db (fields, tables, joins, conditions,
                               [chain['chain_hash'], chain['built_chain_number']])
 
-            alt_chains = query_db (["built_chain_number"], ["built_chains"], [],
-                                   ["chain_hash = ?", "built_chain_number != ?"],
-                                   [chain['chain_hash'], chain['built_chain_number']])
+            alt_chains = query_db (["built_chains.built_chain_number", "grade"], ["built_chains"],
+                                   ["rated_chains on built_chains.chain_hash = rated_chains.chain_hash and built_chains.built_chain_number = rated_chains.built_chain_number"],
+                                   ["built_chains.chain_hash = ?", "built_chains.built_chain_number != ?", "trust_flag= ?"],
+                                   [chain['chain_hash'], chain['built_chain_number'], trust_flag])
+
+            grades = query_db (["trust_flag", "grade"], ["rated_chains"], [],
+                               ["chain_hash = ?", "built_chain_number = ?"],
+                               [chain['chain_hash'], chain['built_chain_number']])
+
 
             return render_template ("chain.html", ips = ips, chain=chain,
-                                    certs=certs, unused_certs=unused_certs, alt_chains=alt_chains)
+                                    certs=certs, unused_certs=unused_certs, alt_chains=alt_chains,
+                                    grades=grades)
         else:
             fields = ["answers.campaign as campaign", "answers.name as name", "answers.ip as ip",
                       "answers.chain_hash as chain_hash", "answers.timestamp as timestamp", "dns.name as subject",
@@ -275,22 +285,19 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
 @app.route('/chains/<chainhash>')
 @app.route('/chains/by-hash/<chainhash>')
 def chain_by_hash(chainhash):
-    return get_chains ([], ["built_chains.chain_hash = ?", "built_chains.built_chain_number = ?"],
-                       [chainhash, 0], chainhash)
+    return redirect (url_for ("chain_by_hash_and_number", chainhash=chainhash, pos=0))
 
 @app.route('/chains/by-hash/<chainhash>/<int:pos>')
-def chain_by_hash_and_pos(chainhash, pos):
+def chain_by_hash_and_number(chainhash, pos):
     return get_chains ([], ["built_chains.chain_hash = ?", "built_chains.built_chain_number = ?"],
                        [chainhash, pos], "%s - %d" % (chainhash, pos))
 
 @app.route('/chains/by-ip/<ip>')
 def chain_by_ip(ip):
-    return get_chains (["answers on built_chains.chain_hash = answers.chain_hash"],
-                       ["answers.ip = ?", "built_chains.built_chain_number = ?"],
-                       [ip, 0], ip)
+    return redirect (url_for ("chain_by_ip_and_number", ip=ip, pos=0))
 
 @app.route('/chains/by-ip/<ip>/<int:pos>')
-def chain_by_ip_and_pos(ip, pos):
+def chain_by_ip_and_number(ip, pos):
     return get_chains (["answers on built_chains.chain_hash = answers.chain_hash"],
                        ["answers.ip = ?", "built_chains.built_chain_number = ?"],
                        [ip, pos], "%s - %d" % (ip, pos))
@@ -308,6 +315,8 @@ def chain_by_subject_in_chain(subject):
 
 
 def tls_version(v):
+    if v == "":
+        v = 0
     if v == 2:
         return "SSLv2"
     elif v == 768:
@@ -330,7 +339,9 @@ def str_of_answer_type(answer):
         elif answer['answer_type'] == 10:
             return ("SSLv2 Alert (%s)" % answer['alert_type'])
         elif answer['answer_type'] == 11:
-            return ("%s Alert (%s, %s)" % (tls_version (answer['version']), answer['alert_level'], answer['alert_type']))
+# TODO: Fix this when answers.csv is fixed
+#            return ("%s Alert (%s, %s)" % (tls_version (answer['version']), answer['alert_level'], answer['alert_type']))
+            return ("TLS Alert (%s, %s)" % (answer['alert_level'], answer['alert_type']))
         elif answer['answer_type'] == 20:
             return ("SSLv2 Handshake (%s)" % answer['ciphersuite'])
         elif answer['answer_type'] == 21:
@@ -338,7 +349,7 @@ def str_of_answer_type(answer):
         else:
             return ("Unexpected type (%s)" % answer['answer_type'])
     except:
-        return "123123132"
+        return "Unexpected error while processing answer description"
 
 def get_answers(joins, conditions, args, title, group_by_list = [], offset=None, limit=None):
     fields = ["answers.name as name", "ip", "port",
@@ -359,15 +370,16 @@ def get_answers(joins, conditions, args, title, group_by_list = [], offset=None,
     else:
         abort(404)
 
+@app.route('/answers/<cid>')
+def answer_by_campaign(cid):
+    return redirect (url_for ("answer_by_campaign_general", cid=cid, start=1, n=100))
+
 @app.route('/answers/<cid>/by-ip/<ip>')
 def answer_by_ip(cid, ip):
     return get_answers ([], ["answers.ip = ?", "answers.campaign = ?"], [ip, cid], "Answer(s) from %s in campaign %s" % (ip, cid))
-#    return get_certs (["names on names.cert_hash = certs.hash"],
-#                      ["names.name LIKE ?"], ["%" + name + "%"], name, ["certs.hash"])
 
-@app.route('/answers/<cid>/all/<int:start>/<int:n>')
-def answer_by_number(cid, start, n):
-    print "COUCOU"
+@app.route('/answers/<cid>/<int:start>/<int:n>')
+def answer_by_campaign_general(cid, start, n):
     return get_answers ([], ["answers.campaign = ?"], [cid], "Answers in campaign %s (%d - %d)" % (cid, start, n),
                         offset=start, limit=n)
     

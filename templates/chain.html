@@ -26,6 +26,22 @@
       </tr>
     </table>
 
+    {% if (grades | count) > 0 %}
+    <h2>Grades</h2>
+    <table border="1">
+      <tr>
+        <th>Trust flag</th>
+        <th>Grade</th>
+      </tr>
+      {%- for grade in grades %}
+      <tr>
+        <td>{{ grade.trust_flag | escape }}</td>
+        <td>{{ grade.grade | escape }}</td>
+      </tr>
+      {%- endfor %}
+    </table>
+    {% endif %}
+
     <h2>Certificates in chain</h1>
 
     <table border="1">
@@ -81,8 +97,10 @@
     <h2>Alternate chains</h2>
     <ul>
       {%- for alt_chain in alt_chains %}
-      <li><a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( alt_chain.built_chain_number | string ) }}">{{ alt_chain.built_chain_number }}</li>
-      {%- endfor %}      
+      <li>
+        <a href="{{ '/chains/by-hash/' + chain.chain_hash + '/' + ( alt_chain.built_chain_number | string ) }}">{{ alt_chain.built_chain_number }}: {{alt_chain.grade | escape}}</a>
+      </li>
+      {%- endfor %}
     </ul>
     {% endif %}
 
