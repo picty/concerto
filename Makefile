@@ -44,8 +44,6 @@ rateChains_SRCS := fileOps.ml rateChains.ml
 
 computeStats_SRCS := fileOps.ml statOps.ml computeStats.ml
 computeBehaviorStats_SRCS := fileOps.ml statOps.ml computeBehaviorStats.ml
-computeStatsV_SRCS := fileOps.ml statOps.ml computeStatsV.ml
-computeBehaviorStatsV_SRCS := fileOps.ml statOps.ml computeBehaviorStatsV.ml
 computeChainsStats_SRCS := fileOps.ml statOps.ml computeChainsStats.ml
 
 # comment this line if not using camlp4
