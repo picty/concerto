@@ -16,6 +16,7 @@ let out_data_dir = ref ""
 let selected_ips = Hashtbl.create 100
 let selected_chain_hashes = Hashtbl.create 100
 let selected_https_names = ref []
+let selected_trust_flag = ref []
 
 let load_strings h filename =
   let f = open_in filename in
@@ -35,8 +36,9 @@ let options = [
 
   mkopt None "filter-by-ip" (StringFun (load_strings selected_ips)) "filter using a list of ips";
   mkopt None "filter-by-chain-hash" (StringFun (load_strings selected_chain_hashes)) "filter using a list of ips";
-  mkopt None "filter-by-https-name" (StringList selected_https_names) "filter using a regexp in certificate server names (CN or SAN)" (* TODO: Choose which type? *)
-  (* TODO: filter-by-trust-flag *)
+  mkopt None "filter-by-https-name" (StringList selected_https_names) "filter using a regexp in certificate server names (CN or SAN)"; (* TODO: Choose which type? *)
+  mkopt None "filter-by-trust-flag" (StringList selected_trust_flag) "filter using a trust flag";
+
   (* TODO: filter-by-hostname *)
 ]
 
@@ -67,6 +69,14 @@ let add_chains_from_name_regex chains_to_populate in_ops re =
   in
   in_ops.iter_lines "chains" filter_chains
 
+let add_trusted_chains chains_to_populate in_ops trust_flag =
+  let filter_chains = function
+    | h::t::_ ->
+       if t = trust_flag
+       then Hashtbl.add chains_to_populate h ()
+    | _ -> ()
+  in
+  in_ops.iter_lines "trusted_chains" filter_chains
 
 
 let handle_answers out_ops filter_fun chains a =
@@ -123,6 +133,7 @@ let _ =
     and out_ops = prepare_data_dir !out_data_dir in
 
     List.iter (add_chains_from_name_regex selected_chain_hashes in_ops) !selected_https_names;
+    List.iter (add_trusted_chains selected_chain_hashes in_ops) !selected_trust_flag;
     let filter_fun = match Hashtbl.length selected_ips, Hashtbl.length selected_chain_hashes with
       | 0, 0 -> usage "filterDataDir" options (Some "Please provide a valid filter strategy with a non-empty list");
       | _, 0 -> filter_by_ip selected_ips
