@@ -97,6 +97,15 @@ let handle_chains out_ops chains certs = function
      end else certs
   | _ -> certs
 
+let handle_built_links out_ops chains certs = function
+  | (chain_hash::_::_::_::cert_hash::_) as l ->
+     if StringSet.mem chain_hash chains
+     then begin
+       out_ops.write_line "built_links" "" l;
+       StringSet.add cert_hash certs
+     end else certs
+  | _ -> certs
+
 let add_root certs = function
   | cert_hash::_ -> StringSet.add cert_hash certs
   | _ -> certs
@@ -146,7 +155,9 @@ let _ =
     if !verbose then prerr_endline "Chains filtered";
 
     let filtered_certs =
-      in_ops.iter_lines_accu "roots" add_root (in_ops.iter_lines_accu "chains" (handle_chains out_ops filtered_chains) StringSet.empty)
+      let from_chains = in_ops.iter_lines_accu "chains" (handle_chains out_ops filtered_chains) StringSet.empty in
+      let from_chains_and_built_links = in_ops.iter_lines_accu "built_links" (handle_built_links out_ops filtered_chains) from_chains in
+      in_ops.iter_lines_accu "roots" add_root from_chains_and_built_links
     in
     if !verbose then prerr_endline "Certificates filtered";
 
@@ -170,7 +181,6 @@ let _ =
     filter_file "dns" filtered_dns;
 
     filter_file "built_chains" filtered_chains;
-    filter_file "built_links" filtered_chains;
     filter_file "unused_certs" filtered_chains;
     filter_file "trusted_chains" filtered_chains;
     filter_file "trusted_built_chains" filtered_chains;
