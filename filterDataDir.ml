@@ -56,7 +56,7 @@ let add_chains_from_name_regex chains_to_populate in_ops re =
   let filter_names accu = function
     | h::_::n::_ ->
        if Str.string_match regex n 0
-       then begin print_endline n; StringSet.add h accu; end
+       then StringSet.add h accu
        else accu
     | _ -> accu
   in
