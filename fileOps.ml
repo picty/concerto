@@ -86,7 +86,7 @@ let unquote_csv_line l =
     then failwith "csv_unquote: missing final quote"
     else match l.[i] with
       | '"' ->
-        if (i = s_len + 2) && (l.[i+1] = '"')
+        if (i < s_len - 1) && (l.[i+1] = '"')
         then begin
           Buffer.add_char buf '"';
           inside_quote fields buf (i+2)
