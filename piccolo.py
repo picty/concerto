@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-import sqlite3, sys
+import sqlite3, sys, re, tempfile
+from pygraphviz import AGraph
 from datetime import datetime
-from flask import g, Flask, render_template, abort, session, redirect, url_for
+from flask import g, Flask, Response, render_template, abort, session, redirect, url_for
 app = Flask(__name__)
 
 DATABASE = sys.argv[1]
@@ -400,7 +401,112 @@ def answer_by_ip(cid, ip):
 def answer_by_campaign_general(cid, start, n):
     return get_answers (["answers.campaign = ?"], [cid], "Answers in campaign %s (%d - %d)" % (cid, start, n),
                         offset=start, limit=n)
+
+
+def make_graph(chain_hash, built_chain_number=None):
+    nodes = []
+    sent_certs = []
+    built_certs = []
+    built_links = []
+    names = dict ()
     
+    certs = query_db (["position", "cert_hash as hash", "name"], ["chains"],
+                      ["certs on cert_hash = certs.hash", "dns on certs.subject_hash = dns.hash"],
+                      ["chains.hash = ?"], [chain_hash])
+    for cert in certs:
+        h = cert['hash']
+        nodes.append(h)
+        if cert['position'] == 0:
+            server_cert = h
+        sent_certs.append(h)
+        names[h] = re.sub (r'/([A-Z])+=', r'\n\1=', cert['name'])[1:]
+
+    built_links = query_db (["distinct cert_hash as hash", "name"], ["built_links"],
+                            ["certs on cert_hash = certs.hash", "dns on certs.subject_hash = dns.hash"],
+                            ["chain_hash = ?"], [chain_hash])
+    for cert in built_links:
+        h = cert['hash']
+        nodes.append(h)
+        names[h] = re.sub (r'/([A-Z])+=', r'\n\1=', cert['name'])[1:]
+
+
+    if built_chain_number != None:
+        certs_to_highlight = query_db (["distinct cert_hash as hash", "position_in_chain"], ["built_links"], [],
+                            ["chain_hash = ?", "built_chain_number = ?"], [chain_hash, built_chain_number])
+        built_chain = dict()
+        last = 0
+        for cert in certs_to_highlight:
+            h = cert['hash']
+            pos = int(cert['position_in_chain'])
+            built_certs.append (h)
+            built_chain[pos] = h
+            last = max (last, pos)
+        for i in range(last):
+            print i
+            built_links.append ((built_chain[i+1], built_chain[i]))
+
+    nodes = set(nodes)
+    edges = []
+
+    for subject in nodes:
+        issuers = query_db (["issuer_hash"], ["links"], [],
+                            ["subject_hash = ?"], [subject])
+        for issuer_obj in issuers:
+            issuer = issuer_obj['issuer_hash']
+            if issuer in nodes:
+                edges.append ((issuer, subject))
+
+    roots_obj = query_db (["cert_hash"], ["roots"], [], ["trust_flag = ?"], [trust_flag])
+    roots = set (filter (lambda r : r in nodes, [root_obj['cert_hash'] for root_obj in roots_obj]))
+
+    edges = set(edges)
+
+    g = AGraph(directed=True)
+
+    root_subgraph = g.add_subgraph([], rank="source")
+    server_cert_graph = g.add_subgraph([], rank="sink")
+
+    for c in nodes:
+        attrs = dict()
+        fillcolor = ""
+        style = ""
+        shape = ""
+        rank = ""
+        color = ""
+        if c in sent_certs:
+            fillcolor = "grey"
+            style = "filled"
+        if c in built_certs:
+            color = "red"
+        if c in roots:
+            shape = "rectangle"
+        g.add_node ("_%s" % c, label = names[c], fillcolor = fillcolor, style = style,
+                    shape = shape, rank = rank, color = color)
+        if c in roots:
+            root_subgraph.add_node ("_%s" % c)
+
+    for ((a, b)) in edges:
+        color = ""
+        if (a, b) in built_links:
+            color = "red"
+            g.add_edge ("_%s" % a, "_%s" % b, color="red")
+        g.add_edge ("_%s" % a, "_%s" % b, color = color)
+
+    pngfile = tempfile.TemporaryFile()
+    g.draw (path=pngfile, format="png", prog="dot")
+    pngfile.seek(0)
+    return Response (pngfile.read(), mimetype="image/png")
+
+
+
+@app.route('/graph/<chain_hash>')
+def make_graph_by_hash_(chain_hash):
+    return make_graph (chain_hash)
+
+
+@app.route('/graph/<chain_hash>/<int:n>')
+def make_graph_by_hash_and_number(chain_hash, n):
+    return make_graph (chain_hash, built_chain_number = n)
 
 
 if __name__ == '__main__':

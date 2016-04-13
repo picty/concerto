@@ -123,7 +123,6 @@ Analysis -> DB injection
 
 Website
  - Provide French templates (using cookies to retain the language?)
- - Add graphs using dot?
  - Add support to filter by campaign
  - Add support to only show certain parts of the HTML and/or limit the depth of the queries
  - Use Bootstrap to render the results properly
