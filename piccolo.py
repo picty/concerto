@@ -483,24 +483,48 @@ def make_graph(chain_hash, built_chain_number=None):
         shape = ""
         rank = ""
         color = ""
+        penwidth = ""
         if c in sent_certs:
             fillcolor = "grey"
             style = "filled"
         if c in built_certs:
             color = "red"
+            penwidth="2.0"
         if c in roots:
             shape = "rectangle"
         g.add_node ("_%s" % c, label = names[c], fillcolor = fillcolor, style = style,
-                    shape = shape, rank = rank, color = color)
+                    shape = shape, rank = rank, color = color, penwidth = penwidth)
         if c in roots:
             root_subgraph.add_node ("_%s" % c)
 
     for ((a, b)) in edges:
-        color = ""
         if (a, b) in built_links:
-            color = "red"
-            g.add_edge ("_%s" % a, "_%s" % b, color="red")
-        g.add_edge ("_%s" % a, "_%s" % b, color = color)
+            g.add_edge ("_%s" % a, "_%s" % b, color="red", penwidth="2.0")
+        else:
+            g.add_edge ("_%s" % a, "_%s" % b)
+
+    pngfile = tempfile.TemporaryFile()
+    print g.layout(prog="dot")
+    g.draw (path=pngfile, format="png", prog="dot")
+    pngfile.seek(0)
+    return Response (pngfile.read(), mimetype="image/png")
+
+def make_graph_legend_image ():
+    g = AGraph(directed=True)
+
+    root_subgraph = g.add_subgraph([], rank="source")
+    link_example = g.add_subgraph([], rank="sink")
+
+    g.add_node ("root", label = "Trusted\nroot", shape = "rectangle", width="1")
+    root_subgraph.add_node("root")
+
+    g.add_node ("sent", label = "Sent\ncertificate", fillcolor = "grey", style = "filled", width="1")
+
+    g.add_node ("issuer", label = "                ", color = "red", penwidth="2.0", width="1")
+    g.add_node ("subject", label = "                ", color = "red", penwidth="2.0", width="1")
+    g.add_edge ("issuer", "subject", color = "red", label = "Built link", penwidth="2.0")
+    link_example.add_node ("issuer")
+    link_example.add_node ("subject")
 
     pngfile = tempfile.TemporaryFile()
     g.draw (path=pngfile, format="png", prog="dot")
@@ -517,6 +541,10 @@ def make_graph_by_hash_(chain_hash):
 @app.route('/graph/<chain_hash>/<int:n>')
 def make_graph_by_hash_and_number(chain_hash, n):
     return make_graph (chain_hash, built_chain_number = n)
+
+@app.route('/graph-legend')
+def make_graph_legend():
+    return make_graph_legend_image ()
 
 
 if __name__ == '__main__':

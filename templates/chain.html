@@ -5,13 +5,12 @@
   <body>
     <h1>{{ chain.chain_hash | escape }} - {{ chain.built_chain_number }}</h1>
 
-    <div style="text-align:center">
-      <a href="{{ "/graph/" +  chain.chain_hash | escape + "/" + chain.built_chain_number | escape }}">
-        <img height="70%" src="{{ "/graph/" +  chain.chain_hash | escape  + "/" + chain.built_chain_number | escape }}"/>
-      </a>
-    </div>
-
     <h3>{{ chain.subject | escape }}</h3>
+
+    <div style="text-align:center">
+      <a href="{{ "/graph/" +  chain.chain_hash | escape + "/" + chain.built_chain_number | escape }}"><img align="center" width="70%" src="{{ "/graph/" +  chain.chain_hash | escape  + "/" + chain.built_chain_number | escape }}"/></a>
+      <img width="18%" align="center" src="/graph-legend"/>
+    </div>
 
     <table border="1">
       <tr>
