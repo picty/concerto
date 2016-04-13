@@ -403,6 +403,16 @@ def answer_by_campaign_general(cid, start, n):
                         offset=start, limit=n)
 
 
+def extract_name (hash, name, short = False):
+    if short:
+        res = re.sub (r'.*/CN=([^/]+).*', r'\1', name)
+        if res == name:
+            return hash
+        else:
+            return res
+    else:
+        return (re.sub (r'/([A-Z]+)=', r'\n\1=', name)[1:])
+
 def make_graph(chain_hash, built_chain_number=None):
     nodes = []
     sent_certs = []
@@ -419,7 +429,7 @@ def make_graph(chain_hash, built_chain_number=None):
         if cert['position'] == 0:
             server_cert = h
         sent_certs.append(h)
-        names[h] = re.sub (r'/([A-Z])+=', r'\n\1=', cert['name'])[1:]
+        names[h] = extract_name (h, cert['name'])
 
     built_links = query_db (["distinct cert_hash as hash", "name"], ["built_links"],
                             ["certs on cert_hash = certs.hash", "dns on certs.subject_hash = dns.hash"],
@@ -427,7 +437,7 @@ def make_graph(chain_hash, built_chain_number=None):
     for cert in built_links:
         h = cert['hash']
         nodes.append(h)
-        names[h] = re.sub (r'/([A-Z])+=', r'\n\1=', cert['name'])[1:]
+        names[h] = extract_name (h, cert['name'])
 
 
     if built_chain_number != None:
