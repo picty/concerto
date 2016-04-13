@@ -13,6 +13,7 @@
         <th>Timestamp</th>
         <th>Answer Type</th>
         <th>Certificate Chain</th>
+        <th>Best grade</th>
       </tr>
 
       {%- for answer in answers %}
@@ -22,7 +23,8 @@
         <td>{{ answer.port | escape }}</td>
         <td>{{ answer.timestamp_str | escape }}</td>
         <td>{{ answer.type_str | escape }}</td>
-        <td><a href="{{ '/chains/by-hash/' + answer.chain_hash + '/0' }}">{{ answer.chain_hash }}</a></td>
+        <td><a href="{{ '/chains/by-hash/' + answer.chain_hash }}">{{ answer.chain_hash }}</a></td>
+        <td>{{ answer.grade | escape }}</td>
       </tr>
       {%- endfor %}
 

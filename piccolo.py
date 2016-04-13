@@ -285,7 +285,14 @@ def get_chains(sup_joins, sup_conditions, args, title, group_by = []):
 @app.route('/chains/<chainhash>')
 @app.route('/chains/by-hash/<chainhash>')
 def chain_by_hash(chainhash):
-    return redirect (url_for ("chain_by_hash_and_number", chainhash=chainhash, pos=0))
+    grade = query_db (["built_chain_number"], ["rated_chains"],
+                      [], ["trust_flag = ?", "chain_hash = ?"],
+                      [trust_flag, chainhash],
+                      order_by = ["grade ASC"])
+    n = 0
+    if grade:
+        n = int(grade[0]['built_chain_number'])
+    return redirect (url_for ("chain_by_hash_and_number", chainhash=chainhash, pos=n))
 
 @app.route('/chains/by-hash/<chainhash>/<int:pos>')
 def chain_by_hash_and_number(chainhash, pos):
@@ -294,7 +301,15 @@ def chain_by_hash_and_number(chainhash, pos):
 
 @app.route('/chains/by-ip/<ip>')
 def chain_by_ip(ip):
-    return redirect (url_for ("chain_by_ip_and_number", ip=ip, pos=0))
+    grade = query_db (["built_chain_number"], ["rated_chains"],
+                      ["answers on answers.chain_hash = rated_chains.chain_hash"],
+                      ["trust_flag = ?", "answers.ip = ?"],
+                      [trust_flag, ip],
+                      order_by = ["grade ASC"])
+    n = 0
+    if grade:
+        n = int(grade[0]['built_chain_number'])
+    return redirect (url_for ("chain_by_ip_and_number", ip=ip, pos=n))
 
 @app.route('/chains/by-ip/<ip>/<int:pos>')
 def chain_by_ip_and_number(ip, pos):
@@ -351,12 +366,14 @@ def str_of_answer_type(answer):
     except:
         return "Unexpected error while processing answer description"
 
-def get_answers(joins, conditions, args, title, group_by_list = [], offset=None, limit=None):
-    fields = ["answers.name as name", "ip", "port",
-              "timestamp", "chain_hash",
+def get_answers(conditions, args, title, offset=None, limit=None):
+    fields = ["answers.name as name", "ip", "port", "timestamp",
+              "answers.chain_hash as chain_hash", "min(grade) as grade",
               "answer_type", "answers.version as version",
               "ciphersuite", "alert_level", "alert_type"]
     tables = ["answers"]
+    joins = ["rated_chains on answers.chain_hash = rated_chains.chain_hash"]
+    group_by_list = ["answers.ip", "rated_chains.chain_hash"]
     rv = query_db (fields, tables, joins, conditions, args, group_by = group_by_list, offset=offset, limit=limit)
     if rv:
         for answer in rv:
@@ -366,6 +383,7 @@ def get_answers(joins, conditions, args, title, group_by_list = [], offset=None,
         if len(rv) == 1:
             return render_template ("answer.html", answer=rv[0], title=title)
         else:
+            # Ajouter le nombre de reponses
             return render_template ("answers.html", answers=rv, title=title)
     else:
         abort(404)
@@ -376,11 +394,11 @@ def answer_by_campaign(cid):
 
 @app.route('/answers/<cid>/by-ip/<ip>')
 def answer_by_ip(cid, ip):
-    return get_answers ([], ["answers.ip = ?", "answers.campaign = ?"], [ip, cid], "Answer(s) from %s in campaign %s" % (ip, cid))
+    return get_answers (["answers.ip = ?", "answers.campaign = ?"], [ip, cid], "Answer(s) from %s in campaign %s" % (ip, cid))
 
 @app.route('/answers/<cid>/<int:start>/<int:n>')
 def answer_by_campaign_general(cid, start, n):
-    return get_answers ([], ["answers.campaign = ?"], [cid], "Answers in campaign %s (%d - %d)" % (cid, start, n),
+    return get_answers (["answers.campaign = ?"], [cid], "Answers in campaign %s (%d - %d)" % (cid, start, n),
                         offset=start, limit=n)
     
 
