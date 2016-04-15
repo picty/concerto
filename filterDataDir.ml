@@ -121,7 +121,7 @@ let handle_certs out_ops certs dns = function
 
 let handle_links write_fun certs = function
   | (subject_hash::issuer_hash::_) as l ->
-     if StringSet.mem subject_hash certs || StringSet.mem issuer_hash certs
+     if StringSet.mem subject_hash certs && StringSet.mem issuer_hash certs
      then write_fun l
   | _ -> ()
 
