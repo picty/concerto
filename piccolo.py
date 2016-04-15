@@ -413,7 +413,7 @@ def extract_name (hash, name, short = False):
     else:
         return (re.sub (r'/([A-Z]+)=', r'\n\1=', name)[1:])
 
-def make_graph(chain_hash, built_chain_number=None):
+def make_chain_graph(chain_hash, built_chain_number=None):
     nodes = []
     sent_certs = []
     built_certs = []
@@ -477,11 +477,9 @@ def make_graph(chain_hash, built_chain_number=None):
     server_cert_graph = g.add_subgraph([], rank="sink")
 
     for c in nodes:
-        attrs = dict()
         fillcolor = ""
         style = ""
         shape = ""
-        rank = ""
         color = ""
         penwidth = ""
         if c in sent_certs:
@@ -493,7 +491,7 @@ def make_graph(chain_hash, built_chain_number=None):
         if c in roots:
             shape = "rectangle"
         g.add_node ("_%s" % c, label = names[c], fillcolor = fillcolor, style = style,
-                    shape = shape, rank = rank, color = color, penwidth = penwidth)
+                    shape = shape, color = color, penwidth = penwidth)
         if c in roots:
             root_subgraph.add_node ("_%s" % c)
 
@@ -509,7 +507,16 @@ def make_graph(chain_hash, built_chain_number=None):
     pngfile.seek(0)
     return Response (pngfile.read(), mimetype="image/png")
 
-def make_graph_legend_image ():
+@app.route('/graph/<chain_hash>')
+def make_chain_graph_by_hash_(chain_hash):
+    return make_chain_graph (chain_hash)
+
+@app.route('/graph/<chain_hash>/<int:n>')
+def make_chain_graph_by_hash_and_number(chain_hash, n):
+    return make_chain_graph (chain_hash, built_chain_number = n)
+
+@app.route('/graph-legend')
+def make_chain_graph_legend ():
     g = AGraph(directed=True)
 
     root_subgraph = g.add_subgraph([], rank="source")
