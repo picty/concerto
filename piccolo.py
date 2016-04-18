@@ -361,7 +361,8 @@ def str_of_answer_type(answer):
         elif answer['answer_type'] == 20:
             return ("SSLv2 Handshake (%s)" % answer['ciphersuite'])
         elif answer['answer_type'] == 21:
-            return ("%s Handshake (%s)" % (tls_version (answer['version']), answer['ciphersuite']))
+#            return ("%s Handshake (%s)" % (tls_version (answer['version']), answer['ciphersuite']))
+            return ("%s Handshake" % tls_version (answer['version']))
         else:
             return ("Unexpected type (%s)" % answer['answer_type'])
     except:
@@ -384,8 +385,17 @@ def get_answers(conditions, args, title, offset=None, limit=None):
         if len(rv) == 1:
             return render_template ("answer.html", answer=rv[0], title=title)
         else:
-            # Ajouter le nombre de reponses
-            return render_template ("answers.html", answers=rv, title=title)
+            types = dict()
+            for answer in rv:
+                t = str_of_answer_type(answer)
+                if t in types:
+                    n = types[t][0]
+                else:
+                    n = 0
+                types[t] = (n+1, t)
+                types_list = types.values()
+                types_list.sort(reverse=True)
+            return render_template ("answers.html", answers=rv, title=title, types = types_list, total=len(rv))
     else:
         abort(404)
 
@@ -399,7 +409,7 @@ def answer_by_ip(cid, ip):
 
 @app.route('/answers/<cid>/<int:start>/<int:n>')
 def answer_by_campaign_general(cid, start, n):
-    return get_answers (["answers.campaign = ?"], [cid], "Answers in campaign %s (%d - %d)" % (cid, start, n),
+    return get_answers (["answers.campaign = ?"], [cid], "Answers in campaign %s" % cid,
                         offset=start, limit=n)
 
 

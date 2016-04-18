@@ -7,6 +7,22 @@
 
     <table border="1">
       <tr>
+        <th>Total number of answers</th>
+        <td>{{ total | escape }}</td>
+      </tr>
+
+      {%- for (n, display_str) in types %}
+      <tr>
+        <th>{{ display_str | escape }}</th>
+        <td>{{ n | escape }}</td>
+      </tr>
+    {% endfor %}
+    </table>
+
+    <br/>
+
+    <table border="1">
+      <tr>
         <th>Name</th>
         <th>IP</th>
         <th>Port</th>
