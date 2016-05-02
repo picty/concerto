@@ -86,7 +86,11 @@ let populate_certs_table v1cas ops sc =
         | [42;840;10040;4;3] -> "dsa-sha1"
         | [96;840;1;101;3;4;3;1] -> "dsa-sha224"
         | [96;840;1;101;3;4;3;2] -> "dsa-sha256"
+        | [42;840;10045;4;1] -> "ecdsa-sha1"
+        | [42;840;10045;4;3;1] -> "ecdsa-sha224"
+        | [42;840;10045;4;3;2] -> "ecdsa-sha256"
         | [42;840;10045;4;3;3] -> "ecdsa-sha384"
+        | [42;840;10045;4;3;4] -> "ecdsa-sha512"
         | l -> Asn1PTypes.string_of_oid l
       in
 
