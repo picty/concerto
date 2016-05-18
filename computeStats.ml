@@ -47,7 +47,7 @@ let increment campaign trust_flag stat_kind counts v =
 
 
 let update_count chain_sets chain_validities counts = function
-  | [campaign_str; _; _; _; timestamp_str; answer_type; version; ciphersuite; _; _; chain_hash;
+  | [campaign_str; _; _; _; timestamp_str; answer_type; version; _; ciphersuite; _; _; chain_hash;
      version_compat_str; suite_compat_str; compression_compat_str; extensions_compat_str; is_rfc5746_supported] ->
      let campaign = int_of_string campaign_str
      and timestamp = Int64.of_string timestamp_str
