@@ -55,7 +55,7 @@ let options = [
 
 let handle_answer features_by_ip chain_sets chain_validities ip_sets i n = function
   | [campaign_str; ip; _; _; timestamp_str; answer_type_str;
-     version_str; ciphersuite_str; alert_level_str; alert_type_str; chain_hash;
+     version_str; _; ciphersuite_str; alert_level_str; alert_type_str; chain_hash;
      version_compat_str; suite_compat_str; compression_compat_str; extensions_compat_str; _] ->
      if (Hashtbl.hash ip) mod n = i then begin
        let campaign = int_of_string campaign_str
@@ -97,7 +97,7 @@ let handle_answer features_by_ip chain_sets chain_validities ip_sets i n = funct
          List.iter flag_ip !filters
        end
      end
-  | _ -> raise (InvalidNumberOfFields 16)
+  | _ -> raise (InvalidNumberOfFields 17)
 
 
 let enumerate_stuff ip_sets counts ip feature =

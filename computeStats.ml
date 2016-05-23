@@ -76,7 +76,7 @@ let update_count chain_sets chain_validities counts = function
      in
      List.iter increment_for_flag !filters
 
-  | _ -> raise (InvalidNumberOfFields 16)
+  | _ -> raise (InvalidNumberOfFields 17)
 
 
 let write_one_value ops (campaign, trust_flag, stat_kind) value_list count =

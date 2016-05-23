@@ -42,7 +42,7 @@ let increment campaign trust_flag stat_kind counts v =
 
 
 let update_count chain_sets chain_qualities counts = function
-  | [campaign_str; _; _; _; timestamp_str; answer_type; version; ciphersuite; _; _;
+  | [campaign_str; _; _; _; timestamp_str; answer_type; version; _; ciphersuite; _; _;
      chain_hash; _; _; _; _; _] ->
      let campaign = int_of_string campaign_str in
      let best_quality =
@@ -73,7 +73,7 @@ let update_count chain_sets chain_qualities counts = function
      in
      List.iter increment_for_flag !filters
 
-  | _ -> raise (InvalidNumberOfFields 16)
+  | _ -> raise (InvalidNumberOfFields 17)
 
 
 let write_one_value ops (campaign, trust_flag, stat_kind) value_list count =
