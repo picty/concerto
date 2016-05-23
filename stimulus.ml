@@ -45,7 +45,7 @@ let parse_stimulus raw_content =
          }
        } ->
         2, int_of_tls_version ch.ssl2_client_version,
-        List.map int_of_ciphersuite ch.ssl2_client_cipher_specs, [], []
+        List.map int_of_ciphersuite ch.ssl2_client_cipher_specs, [0], []
 
      | Some _ -> failwith "Invalid stimulus: this SSLv2 Record is not a valid ClientHello"
                           
