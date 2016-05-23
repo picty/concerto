@@ -33,6 +33,7 @@ flagTrust
 rateChains
 computeStats
 computeBehaviorStats
+compareAnswerTypes
 computeChainsStats
 listV1certs
 filterDataDir
