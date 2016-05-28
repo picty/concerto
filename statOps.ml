@@ -31,23 +31,28 @@ let load_chain_validities ops =
   chain_validities
 
 
-
 let handle_chain_quality_line chain_details = function
-  | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; nb_str; na_str; _] ->
+  | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; nb_str; na_str; algos_str] ->
      let complete = complete_str = "1"
      and ordered = ordered_str = "1"
      and n_transvalid = int_of_string n_transvalid_str
      and n_unused = int_of_string n_unused_str
      and nb = Int64.of_string nb_str
-     and na = Int64.of_string na_str in
+     and na = Int64.of_string na_str
+     and algos = key_typesize_of_string algos_str in
      let details = complete, ordered, n_unused, n_transvalid, nb, na in
      let quality = chain_quality_of_details details in
+     (* TODO: Here, we might want to check for validity period...  but
+        this means we have to keep all chain information, which can be
+        too big in large campaigns...  So we only keep all the chains in
+        the best category, which is an approximation.*)
+     let new_info = (quality, nb, na, algos) in
      begin
        try
-         let current_quality, _, _ = Hashtbl.find chain_details chain_h in
-         if compare_chain_quality current_quality quality < 0
-         then Hashtbl.replace chain_details chain_h (quality, nb, na)
-       with Not_found -> Hashtbl.replace chain_details chain_h (quality, nb, na)
+         let current_quality, _, _, _ = Hashtbl.find chain_details chain_h in
+         if compare_chain_quality current_quality quality < 0 && nb < na
+         then Hashtbl.replace chain_details chain_h new_info
+       with Not_found -> Hashtbl.replace chain_details chain_h new_info
      end
   | _ -> raise (InvalidNumberOfFields 10)
 

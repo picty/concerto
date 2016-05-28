@@ -11,6 +11,8 @@
 
    Output:
     - stats_chain_quality.csv
+    - stats_key_robustness.csv
+    - stats_validity_period.csv
   *)
 
 open Getopt
@@ -43,31 +45,22 @@ let increment campaign trust_flag stat_kind counts v =
 
 
 let update_count chain_sets chain_qualities counts = function
-  | [campaign_str; _; _; _; timestamp_str; answer_type; version; _; ciphersuite; _; _;
+  | [_; _; _; _; _; _; _; _; _; _; _; ""; _; _; _; _; _] -> ()
+  | [campaign_str; _; _; _; timestamp_str; _; _; _; _; _; _;
      chain_hash; _; _; _; _; _] ->
      let campaign = int_of_string campaign_str in
-     let best_quality =
-       try
-         let q, _, _ = Hashtbl.find chain_qualities chain_hash in
-         int_of_chain_quality q
-       with Not_found -> -1
-     in
-     (* TODO: Take timestamp into account *)
-     (* and timestamp = Int64.of_string timestamp_str in *)
-     (* let chain_quality = Hashtbl.find_all chain_details chain_hash in *)
-     (* let check_validity (_, _, _, _, nb, na) = timestamp >= nb && timestamp <= na in *)
-     (* let valid_chain_details = List.filter check_validity chain_details in *)
-     (* let best_quality = match List.rev (List.sort compare_chain_quality (List.map chain_quality_of_details valid_chain_details)) with *)
-     (*   | [] -> -1 *)
-     (*   | x::_ -> int_of_chain_quality x *)
-     (* in *)
+     let (q, nb, na, algos) = Hashtbl.find chain_qualities chain_hash in
+     let computed_v = Int64.to_int (Int64.div (Int64.add (Int64.sub na nb) 86399L) 86400L) in
+     let validity = if computed_v < 0 then 0 else computed_v
+     and quality = char_of_chain_quality q in
 
      let add_for_trust_flag trust_flag =
-       increment campaign trust_flag "chain_quality" counts [string_of_int best_quality]
+       increment campaign trust_flag "chain_quality" counts (String.make 1 quality);
+       increment campaign trust_flag "validity_period" counts (string_of_int validity);
+       increment campaign trust_flag "key_robustness" counts (string_of_key_typesize algos)
      in
 
      add_for_trust_flag "";
-
      let increment_for_flag trust_flag =
        if is_flagged_with chain_sets trust_flag chain_hash
        then add_for_trust_flag trust_flag
@@ -77,8 +70,8 @@ let update_count chain_sets chain_qualities counts = function
   | _ -> raise (InvalidNumberOfFields 17)
 
 
-let write_one_value ops (campaign, trust_flag, stat_kind) value_list count =
-  ops.write_line ("stats_" ^ stat_kind) "" ([string_of_int campaign; trust_flag]@value_list@[string_of_int count])
+let write_one_value ops (campaign, trust_flag, stat_kind) v count =
+  ops.write_line ("stats_" ^ stat_kind) "" [string_of_int campaign; trust_flag; v; string_of_int count]
 
 let write_one_hashtbl ops k h =
   Hashtbl.iter (write_one_value ops k) h

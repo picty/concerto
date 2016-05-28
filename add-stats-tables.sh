@@ -73,6 +73,20 @@ create table stats_chain_quality(
        count int
 );
 
+create table stats_key_robustness(
+       campaign int,
+       trust_flag text,
+       robustness string,
+       count int
+);
+
+create table stats_validity_period(
+       campaign int,
+       trust_flag text,
+       validity_period int,
+       count int
+);
+
 
 -- Import
 
@@ -83,4 +97,6 @@ create table stats_chain_quality(
 .import $DATA_DIR/stats_ciphersuites.csv stats_ciphersuites
 .import $DATA_DIR/stats_rfc5746.csv stats_rfc5746
 .import $DATA_DIR/stats_chain_quality.csv stats_chain_quality
+.import $DATA_DIR/stats_key_robustness.csv stats_key_robustness
+.import $DATA_DIR/stats_validity_period.csv stats_validity_period
 EOF
