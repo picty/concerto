@@ -31,26 +31,6 @@ let load_chain_validities ops =
   chain_validities
 
 
-type chain_quality =
-  | Incomplete
-  | Transvalid
-  | Unordered
-  | RFCCompliant
-
-let int_of_chain_quality = function
-  | Incomplete -> 0
-  | Transvalid -> 1
-  | Unordered -> 2
-  | RFCCompliant -> 3
-
-let compare_chain_quality q1 q2 = compare (int_of_chain_quality q1) (int_of_chain_quality q2)
-
-let chain_quality_of_details = function
-  | false, _, _, _, _, _ -> Incomplete
-  | true, true, 0, 0, _, _ -> RFCCompliant
-  | true, true, _, 0, _, _
-  | true, false, _, 0, _, _ -> Unordered
-  | true, _, _, _, _, _ -> Transvalid
 
 let handle_chain_quality_line chain_details = function
   | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; nb_str; na_str; _] ->

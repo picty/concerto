@@ -17,6 +17,7 @@ open Parsifal
 open Getopt
 open FileOps
 open X509Util
+open ConcertoUtils
 
 let verbose = ref false
 let data_dir = ref ""
@@ -45,11 +46,6 @@ let read_links ops =
   links
 
 
-type key_typesize =
-  | NoKeyType
-  | MostlyRSA of int | RSA of int
-  | DSA | DH | ECDSA | Unknown
-
 let key_typesize t m = match t with
   | "RSA" ->
      let rec compute_size m m_len i =
@@ -64,14 +60,6 @@ let key_typesize t m = match t with
   | "DH" -> DH
   | "ECDSA" -> ECDSA
   | _ -> Unknown
-
-let string_of_key_typesize = function
-  | NoKeyType | Unknown -> ""
-  | MostlyRSA n -> "rsa" ^ (string_of_int n)
-  | RSA n -> "RSA" ^ (string_of_int n)
-  | DSA -> "DSA"
-  | DH -> "DH"
-  | ECDSA -> "ECDSA"
 
 let read_certs_info ops =
   let certs_info = Hashtbl.create 1000 in

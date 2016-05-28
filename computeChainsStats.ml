@@ -15,6 +15,7 @@
 
 open Getopt
 open FileOps
+open ConcertoUtils
 open StatOps
 
 let verbose = ref false
