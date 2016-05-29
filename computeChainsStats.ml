@@ -44,14 +44,15 @@ let increment campaign trust_flag stat_kind counts v =
   inc_in_hashtbl h v
 
 
-let update_count chain_sets chain_qualities counts = function
+let update_count chain_qualities counts = function
   | [_; _; _; _; _; _; _; _; _; _; _; ""; _; _; _; _; _] -> ()
   | [campaign_str; _; _; _; timestamp_str; _; _; _; _; _; _;
      chain_hash; _; _; _; _; _] ->
      let campaign = int_of_string campaign_str in
-     let (q, nb, na, algos) = Hashtbl.find chain_qualities chain_hash in
+     let (q, nb, na, algos, flags) = Hashtbl.find chain_qualities chain_hash in
      let computed_v = Int64.to_int (Int64.div (Int64.add (Int64.sub na nb) 86399L) 86400L) in
      let validity = if computed_v < 0 then 0 else computed_v
+     and timestamp = Int64.of_string timestamp_str
      and quality = char_of_chain_quality q in
 
      let add_for_trust_flag trust_flag =
@@ -61,11 +62,8 @@ let update_count chain_sets chain_qualities counts = function
      in
 
      add_for_trust_flag "";
-     let increment_for_flag trust_flag =
-       if is_flagged_with chain_sets trust_flag chain_hash
-       then add_for_trust_flag trust_flag
-     in
-     List.iter increment_for_flag !filters
+     if timestamp >= nb && timestamp <= na
+     then List.iter add_for_trust_flag flags
 
   | _ -> raise (InvalidNumberOfFields 17)
 
@@ -83,13 +81,13 @@ let _ =
   try
     let ops = prepare_data_dir !data_dir in
 
-    let chain_sets = load_trusted_chains ops !filters in
+    let trusted_built_chains = load_trusted_built_chains ops !filters in
     if !verbose then print_endline "Trust info loaded.";
-    let chain_qualities = load_chain_qualities ops in
+    let chain_qualities = load_chain_qualities trusted_built_chains ops in
     if !verbose then print_endline "Chain details loaded.";
 
     let counts = Hashtbl.create 10 in
-    ops.iter_lines "answers" (update_count chain_sets chain_qualities counts);
+    ops.iter_lines "answers" (update_count chain_qualities counts);
     Hashtbl.iter (write_one_hashtbl ops) counts;
 
     ops.close_all_files ()

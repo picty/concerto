@@ -3,8 +3,14 @@ module Integer = struct
   let compare x y = Pervasives.compare x y
 end
 
+module ChainId = struct
+  type t = string * int
+  let compare x y = Pervasives.compare x y
+end
+
 module IntSet = Set.Make (Integer)
 module StringSet = Set.Make (String)
+module ChainIdSet = Set.Make (ChainId)
 
 
 type chain_quality =

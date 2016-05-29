@@ -20,6 +20,25 @@ let load_trusted_chains ops trust_flags =
   chain_sets
 
 
+let handle_trusted_built_chain_line chain_sets = function
+  | [chain_hash; built_chain_number; trust_flag] ->
+     begin
+       try
+         let s = Hashtbl.find chain_sets trust_flag in
+         Hashtbl.replace chain_sets trust_flag (ChainIdSet.add (Parsifal.hexparse chain_hash, int_of_string built_chain_number) s)
+       with Not_found -> ()
+     end
+  | _ -> raise (InvalidNumberOfFields 3)
+
+let load_trusted_built_chains ops trust_flags =
+  let chain_sets = Hashtbl.create 10 in
+  if trust_flags <> [] then begin
+    List.iter (fun trust_flag -> Hashtbl.add chain_sets trust_flag ChainIdSet.empty) trust_flags;
+    ops.iter_lines "trusted_built_chains" (handle_trusted_built_chain_line chain_sets);
+  end;
+  chain_sets
+
+
 let handle_chain_validity_line chain_validities = function
   | [chain_hash; _; _; _; _; _; _; nb_str; na_str; _] ->
      Hashtbl.add chain_validities chain_hash (Int64.of_string nb_str, Int64.of_string na_str)
@@ -31,7 +50,7 @@ let load_chain_validities ops =
   chain_validities
 
 
-let handle_chain_quality_line chain_details = function
+let handle_chain_quality_line trusted_built_chains chain_details = function
   | [chain_h; n; _; complete_str; ordered_str; n_transvalid_str; n_unused_str; nb_str; na_str; algos_str] ->
      let complete = complete_str = "1"
      and ordered = ordered_str = "1"
@@ -42,23 +61,30 @@ let handle_chain_quality_line chain_details = function
      and algos = key_typesize_of_string algos_str in
      let details = complete, ordered, n_unused, n_transvalid, nb, na in
      let quality = chain_quality_of_details details in
+     let chain_id = Parsifal.hexparse chain_h, int_of_string n in
+     let get_trust_flags current_flag chain_set trust_flags =
+       if ChainIdSet.mem chain_id chain_set
+       then current_flag::trust_flags
+       else trust_flags
+     in
+     let flags = Hashtbl.fold get_trust_flags trusted_built_chains [] in
      (* TODO: Here, we might want to check for validity period...  but
         this means we have to keep all chain information, which can be
         too big in large campaigns...  So we only keep all the chains in
         the best category, which is an approximation.*)
-     let new_info = (quality, nb, na, algos) in
+     let new_info = (quality, nb, na, algos, flags) in
      begin
        try
-         let current_quality, _, _, _ = Hashtbl.find chain_details chain_h in
+         let current_quality, _, _, _, _ = Hashtbl.find chain_details chain_h in
          if compare_chain_quality current_quality quality < 0 && nb < na
          then Hashtbl.replace chain_details chain_h new_info
        with Not_found -> Hashtbl.replace chain_details chain_h new_info
      end
   | _ -> raise (InvalidNumberOfFields 10)
 
-let load_chain_qualities ops =
+let load_chain_qualities trusted_built_chains ops =
   let chain_qualities = Hashtbl.create 1000 in
-  ops.iter_lines "built_chains" (handle_chain_quality_line chain_qualities);
+  ops.iter_lines "built_chains" (handle_chain_quality_line trusted_built_chains chain_qualities);
   chain_qualities
 
 
