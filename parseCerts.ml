@@ -22,10 +22,13 @@ open Getopt
 open FileOps
 
 let data_dir = ref ""
+let incremental = ref false
 
 let options = [
   mkopt (Some 'h') "help" Usage "show this help";
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
+
+  mkopt None "incremental" (Set incremental) "only parse new certificates";
 ]
 
 module StringSet = Set.Make(String)
@@ -156,6 +159,7 @@ let _ =
   in
   try
     let ops = prepare_data_dir !data_dir in
+    if !incremental then ops.reload_keys "certs" (List.hd);
     let v1cas = ops.iter_lines_accu "v1cas" add_v1ca StringSet.empty in
     List.iter (handle_one_prefix v1cas ops) prefixes;
     ops.close_all_files ()
