@@ -37,3 +37,4 @@ compareAnswerTypes
 computeChainsStats
 listV1certs
 filterDataDir
+extractDrownCerts

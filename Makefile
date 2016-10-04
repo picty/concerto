@@ -8,6 +8,7 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	prepareLinks stripPossibleLinks checkLinks \
 	computeComponents buildChains \
 	extract-certdata flagTrust rateChains \
+	extractDrownCerts \
 	computeStats \
 	computeBehaviorStats compareAnswerTypes \
 	computeChainsStats \
@@ -42,6 +43,7 @@ computeComponents_SRCS := fileOps.ml computeComponents.ml
 buildChains_SRCS := concertoUtils.ml fileOps.ml buildChains.ml
 extract-certdata_SRCS := extract-certdata.ml
 flagTrust_SRCS := fileOps.ml flagTrust.ml
+extractDrownCerts_SRCS = concertoUtils.ml fileOps.ml extractDrownCerts.ml
 rateChains_SRCS := fileOps.ml rateChains.ml
 
 computeStats_SRCS := concertoUtils.ml fileOps.ml statOps.ml computeStats.ml
