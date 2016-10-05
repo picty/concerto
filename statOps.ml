@@ -33,7 +33,11 @@ let handle_trusted_built_chain_line chain_sets = function
 let load_trusted_built_chains ops trust_flags =
   let chain_sets = Hashtbl.create 10 in
   if trust_flags <> [] then begin
-    List.iter (fun trust_flag -> Hashtbl.add chain_sets trust_flag ChainIdSet.empty) trust_flags;
+    let add_all_flags trust_flag =
+      let flags = Parsifal.string_split '+' trust_flag in
+      List.iter (fun f -> Hashtbl.add chain_sets f ChainIdSet.empty) flags
+    in
+    List.iter add_all_flags trust_flags;
     ops.iter_lines "trusted_built_chains" (handle_trusted_built_chain_line chain_sets);
   end;
   chain_sets
@@ -90,12 +94,14 @@ let load_chain_qualities trusted_built_chains ops =
 
 
 let is_flagged_with chain_sets trust_flag chain_hash =
-  let s = Hashtbl.find chain_sets trust_flag in
-  StringSet.mem chain_hash s
+  let flags = Parsifal.string_split '+' trust_flag in
+  let check_flags result flag =
+    result && (StringSet.mem chain_hash (Hashtbl.find chain_sets flag))
+  in
+  List.fold_left check_flags true flags
 
 let is_flagged_and_valid chain_sets chain_validities trust_flag chain_hash timestamp =
-  let s = Hashtbl.find chain_sets trust_flag in
-  if StringSet.mem chain_hash s then begin
+  if is_flagged_with chain_sets trust_flag chain_hash then begin
     let validities = Hashtbl.find_all chain_validities chain_hash in
     let check_validity (nb, na) = timestamp >= nb && timestamp <= na in
     List.fold_left (||) false (List.map check_validity validities)
