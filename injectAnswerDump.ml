@@ -153,6 +153,7 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
 
 
 let _ =
+  X509Util.relax_x509_constraints ();
   let dump_files = parse_args ~progname:"injectAnswerDump" options Sys.argv in
   if !data_dir = "" then usage "injectAnswerDump" options (Some "Please provide a valid data directory");
   try

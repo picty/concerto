@@ -30,6 +30,7 @@ let rec handle_one_file ops filename =
 
 
 let _ =
+  X509Util.relax_x509_constraints ();
   let raw_files = parse_args ~progname:"inject" options Sys.argv in
   if !data_dir = "" then usage "inject" options (Some "Please provide a valid data directory");
   if !filetype = "" then usage "inject" options (Some "Please provide a type");

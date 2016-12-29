@@ -182,6 +182,7 @@ let handle_one_file stimulus_checks ops f =
 
 
 let _ =
+  X509Util.relax_x509_constraints ();
   let zgrab_files = parse_args ~progname:"injectZGrabResults" options Sys.argv in
   if !data_dir = "" then usage "injectZGrabResults" options (Some "Please provide a valid data directory");
   try

@@ -102,6 +102,7 @@ let update_trusted_chains trusted_certs trusted_chains = function
 
                
 let _ =
+  X509Util.relax_x509_constraints ();
   let trusted_root_certs = parse_args ~progname:"flagTrust" options Sys.argv in
   if !data_dir = "" then usage "flagTrust" options (Some "Please provide a valid data directory");
   if trusted_root_certs = [] then usage "flagTrust" options (Some "Please provide at least one certificate.");
