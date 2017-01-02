@@ -401,7 +401,7 @@ def get_answers(conditions, args, title, offset=None, limit=None):
 
 @app.route('/answers/<cid>')
 def answer_by_campaign(cid):
-    return redirect (url_for ("answer_by_campaign_general", cid=cid, start=1, n=100))
+    return redirect (url_for ("answer_by_campaign_general", cid=cid, start=0, n=100))
 
 @app.route('/answers/<cid>/by-ip/<ip>')
 def answer_by_ip(cid, ip):
