@@ -16,6 +16,7 @@
 
 open Parsifal
 open X509
+open X509Basics
 open X509Util
 open X509Extensions
 open Getopt

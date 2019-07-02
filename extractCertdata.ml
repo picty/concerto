@@ -1,7 +1,6 @@
 open Str
 open Getopt
 open Base64
-open Parsifal
 open BasePTypes
 
 type action = All | Server | Email | Code | Distrusted
@@ -39,16 +38,16 @@ let normalize s =
   let n = String.length s in
   let res =
     if n > 2 && s.[0] = '"' && s.[n-1] = '"'
-    then String.sub s 1 (n-2)
-    else String.copy s
+    then Bytes.of_string (String.sub s 1 (n-2))
+    else Bytes.of_string s
   in
-  for i = 0 to (String.length res) - 1 do
-    let c = res.[i] in
+  for i = 0 to (Bytes.length res) - 1 do
+    let c = Bytes.get res i in
     let x = int_of_char c in
     if (x < 33) || (x >= 128) || (c = '/')
-    then res.[i] <- '_'
+    then Bytes.set res i '_'
   done;
-  res
+  Bytes.to_string res
 
 let dump_cert_in_separate_file dir label value =
   let f = open_out (dir ^ "/" ^ (normalize label) ^ ".der") in

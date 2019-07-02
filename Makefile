@@ -17,12 +17,14 @@ TARGETS_BYTE = $(foreach t,$(TARGETS),$t.byte)
 
 TARGETS_NATIVE = $(foreach t,$(TARGETS),$t.native)
 
+CFLAGS = -cflags -safe-string,-w,+a-4-9-31-41-44,-warn-error,+a
+
 all:
-	ocamlbuild -use-ocamlfind $(TARGETS_NATIVE)
+	ocamlbuild -use-ocamlfind $(CFLAGS) $(TARGETS_NATIVE)
 	for i in $(TARGETS); do rm -f $$i; ln -s $$i.native $$i; done
 
 byte:
-	ocamlbuild -use-ocamlfind $(TARGETS_BYTE)
+	ocamlbuild -use-ocamlfind $(CFLAGS) $(TARGETS_BYTE)
 
 clean:
 	ocamlbuild -clean

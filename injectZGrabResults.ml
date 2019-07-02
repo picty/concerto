@@ -15,7 +15,6 @@
 
 open Parsifal
 open Getopt
-open TlsEnums
 open FileOps
 open Stimulus
 module Calendar = CalendarLib.Calendar;;

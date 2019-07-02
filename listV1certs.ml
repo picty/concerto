@@ -21,7 +21,7 @@ let options = [
   mkopt (Some 'd') "data-dir" (StringVal data_dir) "set the data directory";
 ]
 
-let rec handle_one_file ops filename =
+let handle_one_file ops filename =
   let raw_file = get_file_content filename in
   let sc = sc_of_raw_value filename false raw_file in
   let c = cert_of_sc sc in

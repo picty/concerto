@@ -21,7 +21,7 @@ let options = [
   mkopt (Some 't') "file-type" (StringVal filetype) "set the file type";
 ]
 
-let rec handle_one_file ops filename =
+let handle_one_file ops filename =
   let raw_file = get_file_content filename in
   (* TODO: Why use a sc here? This could be anything, not only a certificate *)
   (* The only advantage is that we guarantee the use of the same hash function... *)

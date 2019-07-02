@@ -12,8 +12,6 @@
  *)
 
 open Parsifal
-open TlsEnums
-open Stimulus
 open Getopt
 open FileOps
 

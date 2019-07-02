@@ -12,7 +12,6 @@
     - stats_answertype_comparison_<campaigns>.csv
  *)
 
-open ConcertoUtils
 open Getopt
 open FileOps
 open StatOps
@@ -61,7 +60,7 @@ let compute_reference ref_data chain_sets chain_validities = function
 
 let handle_answer ref_data stats campaigns_to_test = function
   | [campaign_str; ip; _; _; _; answer_type_str;
-     _; _; _; _; _; chain_hash;
+     _; _; _; _; _; _;
      version_compat_str; suite_compat_str; compression_compat_str; extensions_compat_str; _] ->
      let campaign = int_of_string campaign_str in
      if List.mem campaign campaigns_to_test then begin

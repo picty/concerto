@@ -40,7 +40,7 @@ let merge_components cid1 cid2 =
 
     
   
-let handle_link ops = function
+let handle_link = function
   | [subject_h; issuer_h] ->
     if subject_h <> issuer_h then begin
       match search subject_h, search issuer_h with
@@ -65,7 +65,7 @@ let _ =
   in
   try
     let ops = prepare_data_dir !data_dir in
-    List.iter (fun csv -> ops.iter_lines csv (handle_link ops)) csv_files;
+    List.iter (fun csv -> ops.iter_lines csv handle_link) csv_files;
     print_string "N_components: ";
     print_int (Hashtbl.length component_by_id);
     print_newline ();

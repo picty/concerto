@@ -69,7 +69,7 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
     let parsed_answer = parse_answer DefaultEnrich false answer in
 
     let raw_certs = match parsed_answer.pa_content with
-      | TLSHandshake h -> h.certificates
+      | TLSHandshake h -> h.server_certificates
       | SSLv2Handshake h -> [h.certificate]
       | _ -> []
     in
@@ -81,7 +81,7 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
         secure_renego_supported = match parsed_answer.pa_content with
       | Empty -> "0", "", "", "", "", "", "", "", "", "", ""
       | Junk _ -> "1", "", "", "", "", "", "", "", "", "", ""
-      | SSLv2Handshake {version = v; cipher_specs = []} ->
+      | SSLv2Handshake {ssl2_version = v; cipher_specs = []} ->
          let v_int = int_of_tls_version v in
          "20", string_of_int v_int, "", "", "", "",
            (if is_version_compatible v_int then "1" else "0"), "", "", "", "0"
@@ -93,22 +93,22 @@ let rec handle_one_file get_campaign stimulus_checks ops input =
          string_of_int (int_of_tls_alert_level al), string_of_int (int_of_tls_alert_type at),
          "", "", "", "", ""
 
-      | SSLv2Handshake {version = v; cipher_specs = c::_} ->
+      | SSLv2Handshake {ssl2_version = v; cipher_specs = c::_} ->
          let v_int = int_of_tls_version v
          and c_int = int_of_ciphersuite c in
          "20", string_of_int v_int, "", string_of_int c_int, "", "",
          (if is_version_compatible v_int then "1" else "0"),
          (if is_suite_compatible c_int then "1" else "0"), "1", "1", "0"
       | TLSHandshake h ->
-         let v_int = int_of_tls_version h.server_hello_version
-         and r_bstr = h.server_random
-         and c_int = int_of_ciphersuite h.ciphersuite in
+         let v_int = int_of_tls_version h.sh_version
+         and r_bstr = h.sh_random
+         and c_int = int_of_ciphersuite h.sh_ciphersuite in
          "21", string_of_int v_int, hexdump r_bstr, string_of_int c_int, "", "",
          (if is_version_compatible v_int then "1" else "0"),
          (if is_suite_compatible c_int then "1" else "0"),
-         (if is_compression_compatible (int_of_compression_method h.compression_method) then "1" else "0"),
-         (if are_extensions_compatible h.extensions then "1" else "0"),
-         (if is_rfc5746_supported h.extensions then "1" else "0")
+         (if is_compression_compatible (int_of_compression_method h.sh_compression_method) then "1" else "0"),
+         (if are_extensions_compatible h.sh_extensions then "1" else "0"),
+         (if is_rfc5746_supported h.sh_extensions then "1" else "0")
     in
 
     let chain_hash =
@@ -171,7 +171,7 @@ let _ =
 
     let open_files = function
       | [] -> input_of_channel ~verbose:(!verbose) "(stdin)" Lwt_io.stdin >>= fun x -> return [x]
-      | _ -> Lwt_list.map_s input_of_filename dump_files
+      | _ -> Lwt_list.map_s (input_of_filename ~verbose:true ~enrich:DefaultEnrich) dump_files
     in
     Lwt_unix.run (open_files dump_files >>= Lwt_list.iter_s (handle_one_file get_campaign stimulus_checks ops));
     ops.close_all_files ()

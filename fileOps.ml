@@ -232,7 +232,7 @@ let prepare_data_dir data_dir =
     | Some b1 ->
       let b2 = input_byte f in
       let name_len = (b1 lsl 8) lor b2 in
-      let name = String.make name_len ' ' in
+      let name = Bytes.make name_len ' ' in
       really_input f name 0 name_len;
       let b1 = input_byte f in
       let b2 = input_byte f in
@@ -241,7 +241,7 @@ let prepare_data_dir data_dir =
       let offset = pos_in f in
       let contents_len = (b1 lsl 24) lor (b2 lsl 16) lor (b3 lsl 8) lor b4 in
       seek_in f ((pos_in f) + contents_len);
-      Hashtbl.replace k name (offset, contents_len);
+      Hashtbl.replace k (Bytes.to_string name) (offset, contents_len);
       read_existing_files f k
     | None -> ()
   in
@@ -316,9 +316,9 @@ let prepare_data_dir data_dir =
     let f, _, keys = open_binfile filetype name in
     let offset, len = Hashtbl.find keys name in
     seek_in f offset;
-    let result = String.make len ' ' in
+    let result = Bytes.make len ' ' in
     really_input f result 0 len;
-    result
+    Bytes.to_string result
   and dump_file filetype name contents =
     let _, f, keys = open_binfile filetype name in
     if not (Hashtbl.mem keys name) then begin
