@@ -6,7 +6,7 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	inject listV1certs parseCerts \
 	prepareLinks stripPossibleLinks checkLinks \
 	computeComponents buildChains \
-	extract-certdata flagTrust rateChains \
+	extractCertdata flagTrust rateChains \
 	extractDrownCerts \
 	computeStats \
 	computeBehaviorStats compareAnswerTypes \

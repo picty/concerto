@@ -28,7 +28,7 @@ stripPossibleLinks
 checkLinks
 computeComponents
 buildChains
-extract-certdata
+extractCertdata
 flagTrust
 rateChains
 computeStats
@@ -82,8 +82,8 @@ computeComponents.native
 computeComponents.byte
 buildChains.native
 buildChains.byte
-extract-certdata.native
-extract-certdata.byte
+extractCertdata.native
+extractCertdata.byte
 flagTrust.native
 flagTrust.byte
 rateChains.native
