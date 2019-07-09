@@ -50,7 +50,6 @@ def query_db(fields, tables, joins, conditions, args=[], order_by=[], group_by=[
     query = ("select %s from %s %s %s %s %s %s %s" %
              (", ".join(fields), ", ".join(tables), join_str, cond_str,
               group_by_str, order_by_str, limit_str, offset_str))
-    print query, args
     cur = get_db().execute(query, args)
     rv = cur.fetchall()
     cur.close()
@@ -462,7 +461,6 @@ def make_chain_graph(chain_hash, built_chain_number=None):
             built_chain[pos] = h
             last = max (last, pos)
         for i in range(last):
-            print i
             built_links.append ((built_chain[i+1], built_chain[i]))
 
     nodes = set(nodes)
@@ -512,7 +510,6 @@ def make_chain_graph(chain_hash, built_chain_number=None):
             g.add_edge ("_%s" % a, "_%s" % b)
 
     pngfile = tempfile.TemporaryFile()
-    print g.layout(prog="dot")
     g.draw (path=pngfile, format="png", prog="dot")
     pngfile.seek(0)
     return Response (pngfile.read(), mimetype="image/png")
