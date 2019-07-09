@@ -482,7 +482,6 @@ def make_chain_graph(chain_hash, built_chain_number=None):
     g = AGraph(directed=True)
 
     root_subgraph = g.add_subgraph([], rank="source")
-    server_cert_graph = g.add_subgraph([], rank="sink")
 
     for c in nodes:
         fillcolor = ""
@@ -526,19 +525,21 @@ def make_chain_graph_by_hash_and_number(chain_hash, n):
 def make_chain_graph_legend ():
     g = AGraph(directed=True)
 
-    root_subgraph = g.add_subgraph([], rank="source")
-    link_example = g.add_subgraph([], rank="sink")
+    source = g.add_subgraph([], rank="source")
+    sink = g.add_subgraph([], rank="sink")
 
     g.add_node ("root", label = "Trusted\nroot", shape = "rectangle", width="1")
-    root_subgraph.add_node("root")
-
     g.add_node ("sent", label = "Sent\ncertificate", fillcolor = "grey", style = "filled", width="1")
+    g.add_edge ("root", "sent", label = "Existing\nlink")
 
     g.add_node ("issuer", label = "                ", color = "red", penwidth="2.0", width="1")
     g.add_node ("subject", label = "                ", color = "red", penwidth="2.0", width="1")
-    g.add_edge ("issuer", "subject", color = "red", label = "Built link", penwidth="2.0")
-    link_example.add_node ("issuer")
-    link_example.add_node ("subject")
+    g.add_edge ("issuer", "subject", color = "red", label = "Built chain", penwidth="2.0")
+
+    source.add_node ("issuer")
+    source.add_node("root")
+    sink.add_node ("subject")
+    sink.add_node("sent")
 
     pngfile = tempfile.TemporaryFile()
     g.draw (path=pngfile, format="png", prog="dot")
