@@ -107,7 +107,7 @@ Step-by-step analysis of a list of domain names
   extensions).  The following snippet uses a TLS 1.2 ClientHello with
   all known ciphersuites.
 
-    probe_server probe2dump --hosts-file=hosts.txt -V TLSv1.2 --all-suites -o campaign.ad2 --campaign 1
+    probe_server probe2dump --hosts-file=hosts.txt -o campaign.ad2 --campaign 1
 
 
 ### Data injection and analysis
@@ -134,7 +134,7 @@ Step-by-step analysis of a list of domain names
 
   1. Start piccolo on your data:
 
-    $(CONCERT_DIR)/piccolo.py datadir
+    $(CONCERT_DIR)/piccolo.py datadir/db.sql
 
   2. Browse the web application (1 is the campaign id used earlier):
 

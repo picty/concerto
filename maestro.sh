@@ -105,6 +105,7 @@ handle_ret_code
 rm -f "$DATA_DIR"/possible_links.csv
 
 echo "= Building chains ="
+touch "$DATA_DIR/unused_certs.csv"
 time "$BIN_DIR/buildChains" -d "$DATA_DIR" -T "$MAX_TRANSVALID" 2> /dev/null
 handle_ret_code
 
