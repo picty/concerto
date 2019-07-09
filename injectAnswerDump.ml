@@ -173,7 +173,7 @@ let _ =
       | [] -> input_of_channel ~verbose:(!verbose) "(stdin)" Lwt_io.stdin >>= fun x -> return [x]
       | _ -> Lwt_list.map_s (input_of_filename ~verbose:true ~enrich:DefaultEnrich) dump_files
     in
-    Lwt_unix.run (open_files dump_files >>= Lwt_list.iter_s (handle_one_file get_campaign stimulus_checks ops));
+    Lwt_main.run (open_files dump_files >>= Lwt_list.iter_s (handle_one_file get_campaign stimulus_checks ops));
     ops.close_all_files ()
   with
     | ParsingException (e, h) -> 

@@ -17,7 +17,7 @@ TARGETS_BYTE = $(foreach t,$(TARGETS),$t.byte)
 
 TARGETS_NATIVE = $(foreach t,$(TARGETS),$t.native)
 
-CFLAGS = -cflags -safe-string,-w,+a-4-9-31-41-44,-warn-error,+a
+CFLAGS = -cflags -safe-string,-w,+a-4-9-31-41-44-58,-warn-error,+a
 
 all:
 	ocamlbuild -use-ocamlfind $(CFLAGS) $(TARGETS_NATIVE)

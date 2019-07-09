@@ -59,7 +59,7 @@ let populate_certs_table v1cas ops sc =
       let not_before, not_after =
         try validity_of_sc sc
         (* TODO: Do better? *)
-        with Failure "validity_of_sc" -> -1L, -1L
+        with Failure _ (* "validity_of_sc" *) -> -1L, -1L
       in
 
       let is_ca = match get_basicConstraints c.tbsCertificate.extensions with
