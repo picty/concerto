@@ -136,7 +136,7 @@ Step-by-step analysis of a list of domain names
 
     $(CONCERT_DIR)/piccolo.py datadir/db.sql
 
-  2. Browse the web application (1 is the campaign id used earlier):
+  2. Browse the web application
 
-    firefox http://127.0.0.1:5000/answers/1
+    firefox http://127.0.0.1:5000
     

@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <title>concerto/piccolo</title>
+  </head>
+  <body>
+    <h1>concerto/piccolo</h1>
+
+    <table border="1">
+      <tr>
+        <th>Campaign</th>
+        <th>Answers</th>
+      </tr>
+
+      {%- for campaign in campaigns %}
+      <tr>
+        <td><a href="{{ '/answers/' + (campaign.id | string) }}">{{ campaign.id | escape }}</a></td>
+        <td>{{ campaign.n | escape }}</td>
+      </tr>
+      {%- endfor %}
+
+  </body>
+</html>

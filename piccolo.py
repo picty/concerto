@@ -562,6 +562,12 @@ def make_graph_legend():
     return make_graph_legend_image ()
 
 
+@app.route('/')
+def home():
+    rv = query_db (["distinct campaign as id", "count(ip) as n"], ["answers"], [], [], group_by=["campaign"])
+    return render_template ("home.html", campaigns=rv)
+
+
 if __name__ == '__main__':
     if len (sys.argv) == 3:
         app.run(debug=True, host=sys.argv[2])
