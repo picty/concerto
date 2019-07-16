@@ -35,6 +35,20 @@ let options = [
 module StringSet = Set.Make(String)
 
 
+let rec extract_dp_from_names = function
+  | [] -> []
+  | (UniformResourceIdentifier uri)::names -> uri::(extract_dp_from_names names)
+  | _::names -> extract_dp_from_names names
+
+(* TODO: reasons and crlIssuer fields are ignored for now, and
+   NameRelativeToCRLIssuer are not handled *)
+let rec handle_crldps = function
+  | [] -> []
+  | { distributionPoint = None }::dps -> handle_crldps dps
+  | { distributionPoint = Some (FullName names) }::dps -> (extract_dp_from_names names)@(handle_crldps dps)
+  | { distributionPoint = Some (NameRelativeToCRLIssuer _ | UnparsedDistributionPointName _) }::dps -> handle_crldps dps
+
+
 let populate_certs_table v1cas ops sc =
   let h = hash_of_sc sc in
   if ops.check_key_freshness "certs" h && ops.check_key_freshness "unparsed_certs" h then begin
@@ -76,6 +90,14 @@ let populate_certs_table v1cas ops sc =
         | Some ({authorityCertSerialNumber = Some aki_serial}, _) -> hexdump aki_serial, ""
         | _ -> "", ""
       in
+
+      begin
+        match get_cRLDistributionPoints c.tbsCertificate.extensions with
+        | None -> ()
+        | Some (crldps, _) ->
+           let uris = handle_crldps crldps in
+           List.iter (fun dp -> ops.write_line "crldps" "" [hexdump h; dp]) uris
+      end;
 
       let sign_algo = match c.tbsCertificate.signature.algorithmId with
         | [42;840;113549;1;1;2] -> "rsa-md2"
