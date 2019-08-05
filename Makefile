@@ -11,7 +11,7 @@ TARGETS = listCSVFiles writeLine dumpFile readFile \
 	computeStats \
 	computeBehaviorStats compareAnswerTypes \
 	computeChainsStats \
-	filterDataDir
+	filterDataDir parseCrls
 
 TARGETS_BYTE = $(foreach t,$(TARGETS),$t.byte)
 
