@@ -129,6 +129,17 @@ create table roots(
 	trust_flag text
 );
 
+create table crldps(
+       cert_hash text,
+       url text
+);
+
+create table revoked_certs(
+       issuer_hash text,
+       serial_number text
+);
+
+
 -- Import
 
 .mode list
@@ -147,7 +158,8 @@ create table roots(
 .import trusted_built_chains.csv trusted_built_chains
 .import rated_chains.csv rated_chains
 .import roots.csv roots
-
+.import crldps.csv crldps
+.import revoked_certs.csv revoked_certs
 
 -- Indexes
 

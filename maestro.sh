@@ -122,6 +122,14 @@ else
     handle_ret_code
 fi
 
+# TODO: Fetch CRLs
+# => put the files in "DATA_DIR/raw_crls"
+
+# TODO: Parse CRLs
+# => parseCrls -d "$DATA_DIR" "$DATA_DIR"/*
+touch "$DATA_DIR/revoked_certs.csv"
+
+
 if [ -z "$NO_DATABASE" ]; then
     echo "= Injecting data into the database ="
     mkdir "$DATA_DIR/tmp"
