@@ -48,6 +48,10 @@
         <th>CA</th>
         <td>{{ cert.isCA | escape }}</td>
       </tr>
+      <tr>
+        <th>Revoked?</th>
+        <td>{{ is_revoked }}</td>
+      </tr>
     </table>
 
     {% if (answers | count) > 0 %}

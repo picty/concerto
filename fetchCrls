@@ -1,0 +1,13 @@
+#!/bin/sh
+
+error () {
+	echo "$1" >&2
+	exit 1
+}
+
+DATADIR="$1"
+[ -d "$DATADIR" ] || error "Invalid argument: $DATADIR is not a data dir."
+
+cd "$DATADIR"
+mkdir crls
+cut -d: -f2- crldps.csv | sort -u | tr -d '"' | grep http | while read url; do curl $url > crls/$( echo $url | tr / + ); done

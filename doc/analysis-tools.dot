@@ -10,6 +10,11 @@ digraph concerto {
     buildChains;
     flagTrust;
     rateChains;
+    {
+      node [color=red]
+      fetchCrls;
+      parseCrls;
+    }
   }
 
 
@@ -20,6 +25,11 @@ digraph concerto {
     chains;
     certs;
     dns;
+    {
+      node [color=red]
+      crldps;
+      revoked_certs;
+    }
     names;
     unparsed_certs;
     possible_links;
@@ -45,6 +55,10 @@ digraph concerto {
   {
     node [fillcolor=grey, style=rounded, style=filled]
     cert_files [label="certs"];
+    {
+      node [color=red]
+      crl_files [label="crls"];
+    }
   }
 
 
@@ -60,6 +74,7 @@ digraph concerto {
   parseCerts -> dns;
   parseCerts -> names;
   parseCerts -> unparsed_certs;
+  parseCerts -> crldps;
 
   certs -> prepareLinks -> possible_links;
 
@@ -82,4 +97,9 @@ digraph concerto {
   built_chains -> rateChains;
   trusted_chains -> rateChains;
   rateChains -> rated_chains;
+
+  crldps -> fetchCrls;
+  fetchCrls -> crl_files;
+  crl_files -> parseCrls;
+  parseCrls -> revoked_certs;
 }

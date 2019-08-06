@@ -141,11 +141,13 @@ def get_certs(sup_joins, conditions, args, title, group_by_list = []):
                                       "dns on certs.subject_hash = dns.hash",
                                       "transitive_links on transitive_links.subject_hash = certs.hash"],
                                      ["transitive_links.issuer_hash = ?"], [cert["hash"]])
+            is_revoked = query_db (["serial_number"], ["revoked_certs"], [], ["issuer_hash = ?", "serial_number = ?"],
+                                    [cert["issuer_hash"], cert["serial"]])
 
             return render_template ("certificate.html", cert=cert, answers=answers, names=names,
                                     issuers = issuers, issued = issued, issued_names = issued_names,
                                     transitive_issuers = transitive_issuers, transitive_issued = transitive_issued,
-                                    transitive_issued_names = transitive_issued_names)
+                                    transitive_issued_names = transitive_issued_names, is_revoked=(is_revoked != []))
         else:
             return render_template ("certificates.html", certs = rv, title = title)
     else:

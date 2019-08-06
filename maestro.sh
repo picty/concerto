@@ -122,12 +122,14 @@ else
     handle_ret_code
 fi
 
-# TODO: Fetch CRLs
-# => put the files in "DATA_DIR/raw_crls"
+echo "= Fetching CRLs ="
+time "$BIN_DIR/fetchCrls" "$DATA_DIR"
+handle_ret_code
 
-# TODO: Parse CRLs
-# => parseCrls -d "$DATA_DIR" "$DATA_DIR"/*
+echo "= Parsing CRLs ="
 touch "$DATA_DIR/revoked_certs.csv"
+time "$BIN_DIR/parseCrls" -d "$DATA_DIR" "$DATA_DIR"/crls/* 2> /dev/null
+handle_ret_code
 
 
 if [ -z "$NO_DATABASE" ]; then
