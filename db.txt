@@ -136,7 +136,7 @@ create table crldps(
 
 create table revoked_certs(
        issuer_hash text,
-       serial_number text
+       serial text
 );
 
 

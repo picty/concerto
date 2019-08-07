@@ -128,7 +128,7 @@ handle_ret_code
 
 echo "= Parsing CRLs ="
 touch "$DATA_DIR/revoked_certs.csv"
-time "$BIN_DIR/parseCrls" -d "$DATA_DIR" "$DATA_DIR"/crls/* 2> /dev/null
+time "$BIN_DIR/parseCrls" -d "$DATA_DIR" $( for i in $(seq 0 255); do printf "%2.2x " $i; done ) 2> /dev/null
 handle_ret_code
 
 

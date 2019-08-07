@@ -5,9 +5,15 @@ error () {
 	exit 1
 }
 
+BINDIR="$( dirname "$0" )"
 DATADIR="$1"
 [ -d "$DATADIR" ] || error "Invalid argument: $DATADIR is not a data dir."
 
-cd "$DATADIR"
-mkdir crls
-cut -d: -f2- crldps.csv | sort -u | tr -d '"' | grep http | while read url; do curl $url > crls/$( echo $url | tr / + ); done
+mkdir -p "$DATADIR"/tmp
+cut -d: -f2- "$DATADIR"/crldps.csv | sort -u | tr -d '"' | grep http | while read url; do
+    CRL_FILE="$DATADIR/tmp/$( echo $url | tr / + )"
+    curl $url > "$CRL_FILE";
+    "$BINDIR"/inject -t crls -d "$DATADIR" "$CRL_FILE"
+    rm -f "$CRL_FILE"
+done
+rmdir "$DATADIR"/tmp

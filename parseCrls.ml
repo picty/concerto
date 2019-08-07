@@ -20,8 +20,9 @@ let options = [
 ]
 
 
-let handle_one_file ops filename =
-  let i = Parsifal.string_input_of_filename filename in
+let handle_one_file ops (name, _, _) =
+  let raw_contents = ops.read_file "crls" name in
+  let i = input_of_string name raw_contents in
   try
     let crl = parse_certificateList i in
 
@@ -40,10 +41,20 @@ let handle_one_file ops filename =
     | ParsingException (e, h) -> prerr_endline (string_of_exception e h)
     | e -> prerr_endline (Printexc.to_string e); exit 1
 
+let handle_one_prefix ops prefix =
+  try
+    let files = ops.list_files_by_prefix "crls" prefix in
+    List.iter (handle_one_file ops) files
+  with
+    Not_found -> ()
+
 
 let _ =
-  let crl_files = parse_args ~progname:"parseCrls" options Sys.argv in
+  let prefixes = parse_args ~progname:"parseCrls" options Sys.argv in
   if !data_dir = "" then usage "parseCrls" options (Some "Please provide a valid data directory");
-  let ops = prepare_data_dir !data_dir in
-  List.iter (handle_one_file ops) crl_files;
-  ops.close_all_files ()
+  try
+    let ops = prepare_data_dir !data_dir in
+    List.iter (handle_one_prefix ops) prefixes;
+    ops.close_all_files ()
+  with
+    | e -> prerr_endline (Printexc.to_string e); exit 1
